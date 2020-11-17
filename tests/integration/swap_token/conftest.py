@@ -17,7 +17,7 @@ from src.leader.eth.leader import EtherLeader
 from src.leader.secret20 import Secret20Leader
 from src.signer.eth.signer import EtherSigner
 from src.signer.secret20 import Secret20Signer
-from src.util.common import Token, SecretAccount, bytes_from_hex
+from src.util.common import Token, SecretAccount
 from src.util.config import Config
 from src.util.crypto_store.local_crypto_store import LocalCryptoStore
 from src.util.web3 import normalize_address
@@ -31,7 +31,6 @@ def rand_str(n):
 
 @fixture(scope="module")
 def make_project(db, configuration: Config):
-
     rmtree(brownie_project_folder, ignore_errors=True)
 
     # init brownie project structure
@@ -83,12 +82,11 @@ def change_owner(swap_contract, new_owner):
 
 
 def init_token_contract(configuration: Config, swap_addr: str = None) -> (str, str):
+    multisig_account = configuration.multisig_acc_addr
 
-    multisig_account = configuration["multisig_acc_addr"]
-
-    tx_data = {"admin": configuration["a_address"].decode(), "name": "Coin Name", "symbol": "ETHR", "decimals": 6,
+    tx_data = {"admin": configuration.a_address.decode(), "name": "Coin Name", "symbol": "ETHR", "decimals": 6,
                "initial_balances": [], "config": {}, "prng_seed": "YWE"}
-    print(f"{configuration['a_address'].decode()=}")
+    print(f"{configuration.a_address.decode()=}")
     cmd = f"docker exec secretdev secretcli tx compute instantiate 1 --label {rand_str(10)} '{json.dumps(tx_data)}'" \
           f" --from a -b block -y"
     res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
@@ -107,9 +105,12 @@ def init_token_contract(configuration: Config, swap_addr: str = None) -> (str, s
 
 
 def init_swap_contract(configuration: Config, token_addr: str, token_code_hash: str) -> (str, str):
-
-    tx_data = {"owner": configuration["a_address"].decode(), "token_address": token_addr,
-               "code_hash": token_code_hash}
+    tx_data = {
+        "owner": configuration.a_address.decode(),
+        "token_address": token_addr,
+        "code_hash": token_code_hash,
+        "minimum_amount": "10",
+    }
 
     cmd = f"secretcli tx compute instantiate 2 --label {rand_str(10)} '{json.dumps(tx_data)}'" \
           f" --from t1 -b block -y"
@@ -128,8 +129,7 @@ def init_swap_contract(configuration: Config, token_addr: str, token_code_hash: 
 
 @fixture(scope="module")
 def setup(make_project, db, configuration: Config, erc20_token):
-
-    configuration['token_contract_addr'] = erc20_token.address
+    configuration.token_contract_addr = erc20_token.address
 
     eth_token, eth_token_hash = init_token_contract(configuration)
     swap_contract, swap_contract_hash = init_swap_contract(configuration, eth_token, eth_token_hash)
@@ -138,7 +138,7 @@ def setup(make_project, db, configuration: Config, erc20_token):
 
     add_to_whitelist(swap_contract, erc_token, erc_token_hash)
 
-    change_owner(swap_contract, configuration["multisig_acc_addr"])
+    change_owner(swap_contract, configuration.multisig_acc_addr)
 
     # add token pairings to db
     TokenPairing(src_network="Ethereum", src_coin="ETH", src_address="native",
@@ -146,8 +146,8 @@ def setup(make_project, db, configuration: Config, erc20_token):
     TokenPairing(src_network="Ethereum", src_coin="ERC", src_address=erc20_token.address,
                  dst_network="Secret", dst_coin="secret-ERC", dst_address=erc_token).save()
 
-    configuration["swap_code_hash"] = swap_contract_hash
-    configuration["scrt_swap_address"] = swap_contract
+    configuration.swap_code_hash = swap_contract_hash
+    configuration.scrt_swap_address = swap_contract
 
     # sn_swap_erc_addr, swap_code_hash, sn_token_erc_addr = init_swap_contracts(configuration)
     # sn_swap_eth_addr, swap_code_hash2, sn_token_eth_addr = init_swap_contracts(configuration)
@@ -204,13 +204,13 @@ def scrt_signers(scrt_accounts, multisig_wallet, configuration) -> List[Secret20
 
 @fixture(scope="module")
 def ethr_leader(multisig_account, configuration: Config, web3_provider, erc20_token, multisig_wallet, ether_accounts):
-    configuration['leader_key'] = ether_accounts[0].key
-    configuration['leader_acc_addr'] = normalize_address(ether_accounts[0].address)
-    configuration['eth_start_block'] = web3_provider.eth.blockNumber
+    configuration.leader_key = ether_accounts[0].key
+    configuration.leader_acc_addr = normalize_address(ether_accounts[0].address)
+    configuration.eth_start_block = web3_provider.eth.blockNumber
 
     # token_map = configuration["token_map_scrt"]
-    signer = LocalCryptoStore(private_key=configuration['leader_key'],
-                              account=configuration['leader_acc_addr'])
+    signer = LocalCryptoStore(private_key=configuration.leader_key,
+                              account=configuration.leader_acc_addr)
     leader = EtherLeader(multisig_wallet, signer,
                          dst_network="Secret", config=configuration)
 

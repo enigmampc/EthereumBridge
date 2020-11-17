@@ -11,7 +11,7 @@ from src.signer.eth.signer import EtherSigner
 from src.signer.secret20 import Secret20Signer
 from src.signer.secret20.signer import SecretAccount
 from src.util.common import Token, bytes_from_hex
-from src.util.config import Config
+from src.util.config import config
 from src.util.crypto_store.local_crypto_store import LocalCryptoStore
 from src.util.crypto_store.pkcs11_crypto_store import Pkcs11CryptoStore
 from src.util.logger import get_logger
@@ -57,42 +57,46 @@ tracked_tokens_scrt = {"secret1hx84ff3h4m8yuvey36g9590pw9mm2p55cwqnm6": Token("n
 
 def run_bridge():  # pylint: disable=too-many-statements
     runners = []
-    logger = get_logger(logger_name='runner')
-    required_configs = ['MODE', 'secret_node', 'multisig_acc_addr', 'chain_id']
-    cfg = Config(required=required_configs)
+    logger = get_logger(logger_name='runner', loglevel=config.log_level)
     try:
-        configure_secretcli(cfg)
+        configure_secretcli(config)
     except RuntimeError:
-        logger = get_logger(logger_name='runner')
+        logger = get_logger(logger_name='runner', loglevel=config.log_level)
         logger.error('Failed to set up secretcli')
         sys.exit(1)
 
-    if cfg.get('token', ''):
-        signer = Pkcs11CryptoStore(store=cfg["PKCS11_MODULE"], token=cfg["token"], user_pin=cfg["user_pin"],
-                                   label=cfg.get('label'))
+    if config.token:
+        signer = Pkcs11CryptoStore(
+            store=config.pkcs11_module, token=config.token, user_pin=config.user_pin, label=config.label
+        )
     else:
-        signer = LocalCryptoStore(private_key=bytes_from_hex(cfg['eth_private_key']), account=cfg['eth_address'])
+        signer = LocalCryptoStore(private_key=bytes_from_hex(config.eth_private_key), account=config.eth_address)
 
     logger.info(f'Starting with ETH address {signer.address}')
 
-    with database(db=cfg['db_name'], host=cfg['db_host'],
-                  password=cfg['db_password'], username=cfg['db_username']):
+    uri = config.db_uri
+    if not uri:
+        db = config.db_name or 'test_db'
+        host = config.db_host or 'localhost'
+        password = config.db_password
+        username = config.db_username
+        uri = f"mongodb+srv://{username}:{password}@{host}/{db}?retryWrites=true&w=majority"
 
-        eth_wallet = MultisigWallet(w3, cfg['multisig_wallet_address'])
+    with database(uri):
+        eth_wallet = MultisigWallet(w3, config.multisig_wallet_address)
+        secret_account = SecretAccount(config.multisig_acc_addr, config.secret_key_name)
 
-        secret_account = SecretAccount(cfg['multisig_acc_addr'], cfg['secret_key_name'])
-
-        eth_signer = EtherSigner(eth_wallet, signer, dst_network="Secret", config=cfg)
-        s20_signer = Secret20Signer(secret_account, eth_wallet, cfg)
+        eth_signer = EtherSigner(eth_wallet, signer, dst_network="Secret", config=config)
+        s20_signer = Secret20Signer(secret_account, eth_wallet, config)
 
         runners.append(eth_signer)
         runners.append(s20_signer)
 
-        if cfg['MODE'].lower() == 'leader':
-            eth_leader = EtherLeader(eth_wallet, signer, dst_network="Secret", config=cfg)
+        if config.mode.lower() == 'leader':
+            eth_leader = EtherLeader(eth_wallet, signer, dst_network="Secret", config=config)
 
-            secret_leader = SecretAccount(cfg['multisig_acc_addr'], cfg['multisig_key_name'])
-            s20_leader = Secret20Leader(secret_leader, eth_wallet, src_network="Ethereum", config=cfg)
+            secret_leader = SecretAccount(config.multisig_acc_addr, config.multisig_key_name)
+            s20_leader = Secret20Leader(secret_leader, eth_wallet, src_network="Ethereum", config=config)
 
             runners.append(eth_leader)
             runners.append(s20_leader)

@@ -25,8 +25,9 @@ class Secret20Signer(Thread):
         self.config = config
         self.stop_event = Event()
         self.logger = get_logger(
-            db_name=config['db_name'],
-            logger_name=config.get('logger_name', f"SecretSigner-{self.multisig.name}")
+            db_name=config.db_name,
+            loglevel=config.log_level,
+            logger_name=config.logger_name or f"SecretSigner-{self.multisig.name}"
         )
         super().__init__(group=None, name=f"SecretSigner-{self.multisig.name}", target=self.run, **kwargs)
         self.setDaemon(True)  # so tests don't hang
@@ -58,7 +59,7 @@ class Secret20Signer(Thread):
                 except ValueError as e:
                     self.logger.error(f'Failed to sign transaction: {tx} error: {e}')
                     failed = True
-            self.stop_event.wait(self.config['sleep_interval'])
+            self.stop_event.wait(self.config.sleep_interval)
 
     def _validate_and_sign(self, tx: Swap):
         """

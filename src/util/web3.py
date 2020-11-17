@@ -10,7 +10,7 @@ from web3.logs import DISCARD
 from web3.types import BlockData
 
 from src.util.common import project_base_path
-from src.util.config import Config
+from src.util.config import config
 
 
 def web3_provider(address_: str) -> Web3:
@@ -21,16 +21,7 @@ def web3_provider(address_: str) -> Web3:
     return Web3(Web3.IPCProvider(address_))
 
 
-w3: Web3 = None
-
-
-def init_provider(config: Config):
-    global w3  # pylint: disable=global-statement
-    w3 = web3_provider(config["eth_node"])
-
-
-cfg = Config()
-init_provider(cfg)
+w3: Web3 = web3_provider(config.eth_node)
 
 w3_lock = Lock()
 event_lock = Lock()

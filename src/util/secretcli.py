@@ -6,10 +6,10 @@ from subprocess import PIPE, run as subprocess_run
 from typing import List, Dict
 
 from src.contracts.secret.secret_contract import swap_json
-from src.util.config import Config
+from src.util.config import Config, config
 from src.util.logger import get_logger
 
-logger = get_logger(logger_name="SecretCLI")
+logger = get_logger(logger_name="SecretCLI", loglevel=config.log_level)
 
 
 def query_encrypted_error(tx_hash: str):
@@ -121,8 +121,7 @@ def run_secret_cli(cmd: List[str], log: bool = True) -> str:
     return p.stdout.decode()
 
 
-def configure_secretcli(config: Config):  # pylint: disable=too-many-statements
-
+def configure_secretcli(config: Config):  # pylint: disable=too-many-statements, redefined-outer-name
     # check if cli is already set up:
     cmd = ['secretcli', 'keys', 'list']
     result = run_secret_cli(cmd)
@@ -131,48 +130,42 @@ def configure_secretcli(config: Config):  # pylint: disable=too-many-statements
         logger.info("CLI already set up")
         return
 
-    cmd = ['secretcli', 'config', 'output', 'json']
-
-    run_secret_cli(cmd)
-    cmd = ['secretcli', 'config', 'indent', 'true']
-    run_secret_cli(cmd)
-    cmd = ['secretcli', 'config', 'trust-node', 'true']
-    run_secret_cli(cmd)
-    cmd = ['secretcli', 'config', 'node', config['secret_node']]
-    run_secret_cli(cmd)
-    cmd = ['secretcli', 'config', 'chain-id', config['chain_id']]
-    run_secret_cli(cmd)
-    cmd = ['secretcli', 'config', 'keyring-backend', 'test']
-    run_secret_cli(cmd)
+    run_secret_cli(['secretcli', 'config', 'output', 'json'])
+    run_secret_cli(['secretcli', 'config', 'indent', 'true'])
+    run_secret_cli(['secretcli', 'config', 'trust-node', 'true'])
+    run_secret_cli(['secretcli', 'config', 'node', config.secret_node])
+    run_secret_cli(['secretcli', 'config', 'chain-id', config.chain_id])
+    run_secret_cli(['secretcli', 'config', 'keyring-backend', 'test'])
 
     # set up multisig
     signers = []
 
-    if isinstance(config["secret_signers"], str):
-        parsed_signers = config["secret_signers"].replace(' ', '').split(',')
+    if isinstance(config.secret_signers, str):
+        parsed_signers = config.secret_signers.replace(' ', '').split(',')
     else:
-        parsed_signers = config["secret_signers"]
+        parsed_signers = config.secret_signers
 
     for i, key in enumerate(parsed_signers):
-        cmd = ['secretcli', 'keys', 'add', f'ms_signer{i}', f'--pubkey={key}']
         signers.append(f'ms_signer{i}')
-        run_secret_cli(cmd)
+        run_secret_cli(['secretcli', 'keys', 'add', f'ms_signer{i}', f'--pubkey={key}'])
 
-    cmd = ['secretcli', 'keys', 'add', f'{config["multisig_key_name"]}', f"--multisig={','.join(signers)}",
-           '--multisig-threshold', f'{config["signatures_threshold"]}']
-    run_secret_cli(cmd)
+    run_secret_cli([
+        'secretcli', 'keys', 'add', f'{config.multisig_key_name}',
+        f"--multisig={','.join(signers)}",
+        '--multisig-threshold', f'{config.signatures_threshold}'
+    ])
 
-    logger.debug(f'importing private key from {config["secret_key_file"]} with name {config["secret_key_name"]}')
+    logger.debug(f'importing private key from {config.secret_key_file} with name {config.secret_key_name}')
 
     # import key
-    key_path = os.path.join(f'{config["KEYS_BASE_PATH"]}', f'{config["secret_key_file"]}')
-    cmd = ['secretcli', 'keys', 'import', f'{config["secret_key_name"]}',
-           f'{key_path}']
-    process = subprocess.Popen(cmd,
-                               stdin=subprocess.PIPE,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-    inputdata = config["secret_key_password"]
+    key_path = os.path.join(f'{config.keys_base_path}', f'{config.secret_key_file}')
+    process = subprocess.Popen(
+        ['secretcli', 'keys', 'import', f'{config.secret_key_name}', f'{key_path}'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    inputdata = config.secret_key_password
     _, stderrdata = process.communicate(input=(inputdata+"\n").encode())
 
     if stderrdata:
@@ -181,14 +174,11 @@ def configure_secretcli(config: Config):  # pylint: disable=too-many-statements
 
     logger.debug("copying transaction key..")
     # copy transaction key from shared location
-    src_key_path = os.path.join(f'{config["KEYS_BASE_PATH"]}', 'id_tx_io.json')
-    dst_key_path = os.path.join(f'{config["SECRETCLI_HOME"]}', 'id_tx_io.json')
+    src_key_path = os.path.join(f'{config.keys_base_path}', 'id_tx_io.json')
+    dst_key_path = os.path.join(f'{config.secretcli_home}', 'id_tx_io.json')
     copyfile(src_key_path, dst_key_path)
 
     # test configuration
-    cmd = ['secretcli', 'query', 'account', config['multisig_acc_addr']]
-    run_secret_cli(cmd)
+    run_secret_cli(['secretcli', 'query', 'account', config.multisig_acc_addr])
 
-    #
-    cmd = ['secretcli', 'query', 'register', 'secret-network-params']
-    run_secret_cli(cmd)
+    run_secret_cli(['secretcli', 'query', 'register', 'secret-network-params'])

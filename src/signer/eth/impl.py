@@ -1,6 +1,5 @@
 import subprocess
 from json import JSONDecodeError
-from pathlib import Path
 from typing import Dict
 
 from web3.datastructures import AttributeDict
@@ -44,7 +43,8 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         self,
         multisig_contract: MultisigWallet,
         signer: CryptoManagerBase,
-        dst_network: str, config: Config
+        dst_network: str,
+        config: Config
     ):
         # todo: simplify this, pylint is right
         self.multisig_contract = multisig_contract
@@ -52,8 +52,9 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         self.signer = signer
         self.config = config
         self.logger = get_logger(
-            db_name=config['db_name'],
-            logger_name=config.get('logger_name', f"{self.__class__.__name__}-{self.account[0:5]}")
+            db_name=config.db_name,
+            loglevel=self.config.log_level,
+            logger_name=config.logger_name or f"{self.__class__.__name__}-{self.account[0:5]}"
         )
 
         self.erc20 = erc20_contract()
@@ -66,18 +67,10 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
 
         self.tracked_tokens = self.token_map.keys()
 
-    def _create_cache(self):
-        # todo: db this shit
-        directory = Path.joinpath(Path.home(), self.config['app_data'])
-        directory.mkdir(parents=True, exist_ok=True)  # pylint: disable=no-member
-        file_path = Path.joinpath(directory, f'submission_events_{self.account[0:5]}')
-
-        return open(file_path, "a+")
-
     def _check_remaining_funds(self):
         remaining_funds = w3.eth.getBalance(self.account)
         self.logger.debug(f'ETH signer remaining funds: {w3.fromWei(remaining_funds, "ether")} ETH')
-        fund_warning_threshold = float(self.config['eth_funds_warning_threshold'])
+        fund_warning_threshold = self.config.eth_funds_warning_threshold
         if remaining_funds < w3.toWei(fund_warning_threshold, 'ether'):
             self.logger.warning(f'ETH signer {self.account} has less than {fund_warning_threshold} ETH left')
 
@@ -129,10 +122,10 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         try:
             if token == '0x0000000000000000000000000000000000000000':
                 self.logger.info("Testing secret-ETH to ETH swap")
-                swap = query_scrt_swap(nonce, self.config["scrt_swap_address"], self.token_map['native'].address)
+                swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.token_map['native'].address)
             else:
                 self.logger.info(f"Testing {self.token_map[token].address} to {token} swap")
-                swap = query_scrt_swap(nonce, self.config["scrt_swap_address"], self.token_map[token].address)
+                swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.token_map[token].address)
         except subprocess.CalledProcessError as e:
             self.logger.error(f'Error querying transaction: {e}')
             raise RuntimeError from None
@@ -185,7 +178,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         Sign the transaction with the signer's private key and then broadcast
         Note: This operation costs gas
         """
-        if self.config["network"] == "mainnet":
+        if self.config.network == "mainnet":
             gas_prices = BridgeOracle.gas_price()
         else:
             gas_prices = None

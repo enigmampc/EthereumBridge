@@ -110,7 +110,8 @@ def deploy_scrt():
         print(f"Secret {token['name']}, Deployed at: {scrt_token}")
         add_to_whitelist(swap_contract, scrt_token, scrt_token_code, pow(10, token["decimals"]))
 
-        with database("test_db2", "cluster0.dka2m.mongodb.net", "leader", "6FXQ3gHXQQAkbpmI"):
+        uri = f""
+        with database("uri"):
             try:
                 TokenPairing.objects().get(src_network="Ethereum", src_address=token["address"]).update(dst_address=scrt_token)
                 print("Updated DB record")

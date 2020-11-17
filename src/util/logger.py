@@ -1,6 +1,4 @@
 import logging
-# from mongoengine import connect
-import os
 import sys
 
 import mongoengine
@@ -53,9 +51,9 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-def get_logger(logger_name: str = 'enigma', db_name: str = '') -> logging.Logger:
+def get_logger(logger_name: str = 'enigma', loglevel: str = 'debug', db_name: str = '') -> logging.Logger:
     logger = logging.getLogger(logger_name)
-    loglevel = getattr(logging, os.getenv('LOG_LEVEL', '').upper(), logging.DEBUG)
+    loglevel = getattr(logging, loglevel.upper(), logging.DEBUG)
     if not isinstance(loglevel, int):
         raise ValueError('Invalid log level: %s' % loglevel)
     logger.setLevel(level=loglevel)

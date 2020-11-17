@@ -1,6 +1,7 @@
 {
   "db_name": "test_db",
-  "app_data": ".bridge_test",
+  "mode": "",
+  "log_level": "debug",
   "signatures_threshold": 3,
   "eth_confirmations": 12,
   "eth_start_block": 0,
@@ -14,14 +15,24 @@
   "secret_contract_name": "secret-usdt",
   "secret_token_address": "secret1k48x38gdrunurennpemt4ns45cphlvuvg9kfzs",
   "secret_swap_contract_address": "secret1k48x38gdrunurennpemt4ns45cphlvuvg9kfzs",
+
+  "keys_base_path": "",
+  "multisig_acc_addr": "",
+  "secret_signers": [],
+  "secretcli_home": "",
+  "scrt_swap_address": "",
+  "swap_code_hash": "",
+  "secret_key_file": "",
+  "secret_key_name": "",
+
   "leader_key": "",
   "network": "local",
   "provider_address": "",
   "multisig_key_name": "ms1",
   "path_to_keys": "keys/keys",
-  "path_to_certs": "../keys/deployment",
+  "enclave_key": "keys/deployment/io-master-cert.der",
   "eth_node": "http://127.0.0.1:8545",
   "secret_node": "tcp://localhost:26657",
-  "eth_funds_warning_threshold": "0.1",
-  "scrt_funds_warning_threshold": "10"
+  "eth_funds_warning_threshold": 0.1,
+  "scrt_funds_warning_threshold": 10
 }

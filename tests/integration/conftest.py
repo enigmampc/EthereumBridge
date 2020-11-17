@@ -23,7 +23,7 @@ def multisig_wallet(web3_provider, configuration: Config, ether_accounts):
     from brownie.project.IntegrationTests import MultiSigSwapWallet
     # normalize_accounts = [normalize_address(acc.address) for acc in ether_accounts]
     swap_contract = MultiSigSwapWallet.deploy([acc.address for acc in ether_accounts],
-                                              configuration['signatures_threshold'],
+                                              configuration.signatures_threshold,
                                               PAYABLE_ADDRESS,
                                               {'from': accounts[0]})
     contract_address = str(swap_contract.address)
@@ -34,7 +34,7 @@ def multisig_wallet(web3_provider, configuration: Config, ether_accounts):
 @fixture(scope="module")
 def ether_accounts(web3_provider, configuration: Config):
     res = []
-    for _ in range(configuration['signatures_threshold']):
+    for _ in range(configuration.signatures_threshold):
         acc = web3_provider.eth.account.create()
         # account[0] is network.eth.coinbase
         web3_provider.eth.sendTransaction({'from': normalize_address(web3_provider.eth.accounts[0]),
@@ -48,4 +48,4 @@ def ether_accounts(web3_provider, configuration: Config):
 @fixture(scope="module")
 def web3_provider(configuration):
     # connect to local ganache node, started by brownie
-    return Web3(Web3.HTTPProvider(configuration['eth_node']))
+    return Web3(Web3.HTTPProvider(configuration.eth_node))

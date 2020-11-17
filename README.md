@@ -142,8 +142,8 @@ of the files in the ./config/ directory, and the rest by setting environment var
 * multisig_wallet_address - Ethereum multisig contract address
 * scrt_swap_address - address of secret contract handling our swaps
 * swap_code_hash - code hash of the secret contract handling our swaps
-* KEYS_BASE_PATH - path to directory with secret network key, and transactional key (id_tx_io.json)
-* SECRETCLI_HOME - path to secretcli config directory (/home/{user}/.secretcli)
+* keys_base_path - path to directory with secret network key, and transactional key (id_tx_io.json)
+* secretcli_home - path to secretcli config directory (/home/{user}/.secretcli)
 * eth_address - ethereum address
 * eth_private_key - ethereum private key
 * secret_node - address of secret network rpc node
@@ -153,7 +153,7 @@ of the files in the ./config/ directory, and the rest by setting environment var
 * multisig_key_name - secret network multisig name
 * secret_signers - list of the public keys of addresses that comprise the address in `multisig_acc_addr`
 * SWAP_ENV - either "TESTNET", "MAINNET" or "LOCAL" depending on environment
-* MODE - either "signer" or "leader" depending on operating mode
+* mode - either "signer" or "leader" depending on operating mode
 * db_username - database username
 * db_password - database password
 * db_host - hostname of database service provider

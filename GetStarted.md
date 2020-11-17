@@ -58,12 +58,13 @@ Of all available config parameters, the ones that require setting environment va
 
   ###### Ethereum private key
   * eth_private_key
-  * eth_account
+  * eth_address
 
   ###### OR if PKCS11 is used:
   * token
   * user_pin
   * label
+  * pkcs11_module
 
   ###### Provided by leader
   * db_username - database username
@@ -86,4 +87,4 @@ We recommend setting an .env file and using docker-compose, but you can also use
 If you want to customize the docker image in this image feel free - the executable is managed by supervisor, the configuration
 of which can be found in `deployment/config/supervisor.conf`.
 You can add a PKCS11 module by adding installation of the client module to the docker image, and
-overriding the PKCS11_MODULE environment variable to point to the library `.so` file. Other HSM or key vault support can be added by request 
+overriding the pkcs11_module environment variable to point to the library `.so` file. Other HSM or key vault support can be added by request 

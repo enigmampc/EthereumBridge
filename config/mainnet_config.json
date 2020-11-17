@@ -1,6 +1,5 @@
 {
 "db_name": "test_db",
-"app_data": ".bridge_test",
 "logger_name": "test logger",
 "signatures_threshold": 1,
 "eth_confirmations": 2,

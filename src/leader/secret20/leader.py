@@ -48,8 +48,9 @@ class Secret20Leader(Thread):
         self.config = config
         self.manager = SecretManager(contract, token_map, secret_multisig, config)
         self.logger = get_logger(
-            db_name=self.config['db_name'],
-            logger_name=config.get('logger_name', f"{self.__class__.__name__}-{self.multisig_name}")
+            db_name=config.db_name,
+            loglevel=config.log_level,
+            logger_name=config.logger_name or f"{self.__class__.__name__}-{self.multisig_name}"
         )
         self.stop_event = Event()
 
@@ -93,14 +94,14 @@ class Secret20Leader(Thread):
                 failed_prev = not self._broadcast_validation(tx)
 
             self.logger.debug('done scanning for swaps. sleeping..')
-            self.stop_event.wait(self.config['sleep_interval'])
+            self.stop_event.wait(self.config.sleep_interval)
 
     def _create_and_broadcast(self, tx: Swap) -> bool:
         # reacts to signed tx in the DB that are ready to be sent to secret20
         signatures = [signature.signed_tx for signature in Signatures.objects(tx_id=tx.id)]
-        if len(signatures) < self.config['signatures_threshold']:  # sanity check
+        if len(signatures) < self.config.signatures_threshold:  # sanity check
             self.logger.error(msg=f"Tried to sign tx {tx.id}, without enough signatures"
-                                  f" (required: {self.config['signatures_threshold']}, have: {len(signatures)})")
+                                  f" (required: {self.config.signatures_threshold}, have: {len(signatures)})")
             return False
 
         try:
@@ -130,7 +131,7 @@ class Secret20Leader(Thread):
     def _check_remaining_funds(self):
         remaining_funds = get_uscrt_balance(self.manager.multisig.address)
         self.logger.debug(f'SCRT leader remaining funds: {remaining_funds / 1e6} SCRT')
-        fund_warning_threshold = float(self.config['scrt_funds_warning_threshold'])
+        fund_warning_threshold = self.config.scrt_funds_warning_threshold
         if remaining_funds < fund_warning_threshold * 1e6:  # 1e6 uSCRT == 1 SCRT
             self.logger.warning(f'SCRT leader has less than {fund_warning_threshold} SCRT left')
 

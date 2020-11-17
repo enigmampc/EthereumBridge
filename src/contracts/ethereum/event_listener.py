@@ -25,15 +25,16 @@ class EthEventListener(EventProvider):
         self.config = config
         self.callbacks = Callbacks()
         self.logger = get_logger(
-            db_name=config['db_name'],
-            logger_name=config.get('logger_name', f"{self.__class__.__name__}-{self.id}")
+            db_name=config.db_name,
+            loglevel=config.log_level,
+            logger_name=config.logger_name or f"{self.__class__.__name__}-{self.id}"
         )
         self.events = []
         self.pending_events: List[Tuple[str, LogReceipt]] = []
         self.filters: Dict[str, LogFilter] = {}
-        self.confirmations = config['eth_confirmations']
+        self.confirmations = config.eth_confirmations
         self.stop_event = Event()
-        super().__init__(group=None, name=f"EventListener-{config.get('logger_name', '')}", target=self.run, **kwargs)
+        super().__init__(group=None, name=f"EventListener-{config.logger_name}", target=self.run, **kwargs)
         self.setDaemon(True)
 
     def register(self, callback: Callable, events: List[str], from_block="latest"):
@@ -74,7 +75,7 @@ class EthEventListener(EventProvider):
                 self.logger.info(f"Event {name} passed confirmation limit, executing callback")
                 self.callbacks.trigger(name, event)
 
-            sleep(self.config['sleep_interval'])
+            sleep(self.config.sleep_interval)
 
     def confirmation_handler(self):
         blockNum = w3.eth.blockNumber
@@ -105,7 +106,7 @@ class EthEventListener(EventProvider):
             block = (w3.eth.blockNumber - self.confirmations)
             if block >= number:
                 return block
-            sleep(self.config['sleep_interval'])
+            sleep(self.config.sleep_interval)
 
     def confirmation_manager(self):
         pass

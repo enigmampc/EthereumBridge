@@ -26,8 +26,8 @@ class Swap(Document):
     dst_network = StringField(required=False, default='secret20')
     dst_coin = StringField(required=False, default='seth')
     dst_address = StringField(required=False)
-    created_on = DateTimeField(default=datetime.utcnow())
-    updated_on = DateTimeField(default=datetime.utcnow())
+    created_on = DateTimeField(default=datetime.utcnow)
+    updated_on = DateTimeField(default=datetime.utcnow)
     sequence = IntField(required=False)
 
     @classmethod

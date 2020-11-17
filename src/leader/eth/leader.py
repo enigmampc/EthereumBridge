@@ -33,8 +33,14 @@ class EtherLeader(Thread):
     """
     network = "Ethereum"
 
-    def __init__(self, multisig_wallet: MultisigWallet, signer: CryptoManagerBase,
-                 dst_network: str, config: Config, **kwargs):
+    def __init__(
+        self,
+        multisig_wallet: MultisigWallet,
+        signer: CryptoManagerBase,
+        dst_network: str,
+        config: Config,
+        **kwargs
+    ):
         self.config = config
         self.multisig_wallet = multisig_wallet
         self.erc20 = erc20_contract()
@@ -47,8 +53,11 @@ class EtherLeader(Thread):
         # self.private_key = private_key
         # self.default_account = account
         self.token_map = token_map
-        self.logger = get_logger(db_name=self.config['db_name'],
-                                 logger_name=config.get('logger_name', self.__class__.__name__))
+        self.logger = get_logger(
+            db_name=config.db_name,
+            loglevel=config.log_level,
+            logger_name=config.logger_name or self.__class__.__name__
+        )
         self.stop_event = Event()
         super().__init__(group=None, name="EtherLeader", target=self.run, **kwargs)
 
@@ -71,7 +80,7 @@ class EtherLeader(Thread):
 
                     self.logger.debug(f'Scanning token {token} for query #{next_nonce}')
 
-                    swap_data = query_scrt_swap(next_nonce, self.config["scrt_swap_address"], token)
+                    swap_data = query_scrt_swap(next_nonce, self.config.scrt_swap_address, token)
 
                     self._handle_swap(swap_data, token, self.token_map[token].address)
                     swap_tracker.nonce = next_nonce
@@ -83,14 +92,14 @@ class EtherLeader(Thread):
                         self.logger.error(f"Failed to query swap: stdout: {e.stdout} stderr: {e.stderr}")
                         # if b'ERROR: query result: encrypted: Failed to get swap for key' not in e.stderr:
 
-            self.stop_event.wait(self.config['sleep_interval'])
+            self.stop_event.wait(self.config.sleep_interval)
 
     @staticmethod
     def _validate_fee(amount: int, fee: int):
         return amount > fee
 
     def _tx_native_params(self, amount, dest_address):
-        if self.config["network"] == "mainnet":
+        if self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
             fee = gas_price * 1e9 * self.multisig_wallet.SUBMIT_GAS
         else:
@@ -105,7 +114,7 @@ class EtherLeader(Thread):
         return data, tx_dest, tx_amount, tx_token, fee
 
     def _tx_erc20_params(self, amount, dest_address, dst_token):
-        if self.config["network"] == "mainnet":
+        if self.config.network == "mainnet":
             decimals = Erc20Info.decimals(dst_token)
             x_rate = BridgeOracle.x_rate(Coin.Ethereum, Erc20Info.coin(dst_token))
             gas_price = BridgeOracle.gas_price()
@@ -176,20 +185,18 @@ class EtherLeader(Thread):
     def _chcek_remaining_funds(self):
         remaining_funds = w3.eth.getBalance(self.signer.address)
         self.logger.info(f'ETH leader remaining funds: {w3.fromWei(remaining_funds, "ether")} ETH')
-        fund_warning_threshold = float(self.config['eth_funds_warning_threshold'])
+        fund_warning_threshold = self.config.eth_funds_warning_threshold
         if remaining_funds < w3.toWei(fund_warning_threshold, 'ether'):
             self.logger.warning(f'ETH leader {self.signer.address} has less than {fund_warning_threshold} ETH left')
 
     def _broadcast_transaction(self, msg: message.Submit):
-        if self.config["network"] == "mainnet":
+        if self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
         else:
             gas_price = None
 
         self._chcek_remaining_funds()
 
-        # tx_hash = self.multisig_wallet.submit_transaction(self.config['leader_acc_addr'], self.config['leader_key'],
-        #                                                   gas_price, msg)
         data = self.multisig_wallet.encode_data('submitTransaction', *msg.args())
         tx = self.multisig_wallet.raw_transaction(
             self.signer.address, 0, data, gas_price,

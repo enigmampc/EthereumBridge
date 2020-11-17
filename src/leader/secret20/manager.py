@@ -36,8 +36,9 @@ class SecretManager(Thread):
         self.event_listener = EthEventListener(contract, config)
 
         self.logger = get_logger(
-            db_name=self.config['db_name'],
-            logger_name=config.get('logger_name', f"{self.__class__.__name__}-{self.multisig.name}")
+            db_name=config.db_name,
+            loglevel=config.log_level,
+            logger_name=config.logger_name or f"{self.__class__.__name__}-{self.multisig.name}"
         )
         self.stop_signal = Event()
         self.account_num = 0
@@ -65,7 +66,7 @@ class SecretManager(Thread):
         """Scans for signed transactions and updates status if multisig threshold achieved"""
         self.logger.info("Starting..")
 
-        to_block = w3.eth.blockNumber - self.config['eth_confirmations']
+        to_block = w3.eth.blockNumber - self.config.eth_confirmations
 
         self.catch_up(to_block)
 
@@ -78,21 +79,21 @@ class SecretManager(Thread):
 
             for transaction in Swap.objects(status=Status.SWAP_UNSIGNED):
                 self.logger.debug(f"Checking unsigned tx {transaction.id}")
-                if Signatures.objects(tx_id=transaction.id).count() >= self.config['signatures_threshold']:
+                if Signatures.objects(tx_id=transaction.id).count() >= self.config.signatures_threshold:
                     self.logger.info(f"Found tx {transaction.id} with enough signatures to broadcast")
                     transaction.status = Status.SWAP_SIGNED
                     transaction.save()
                     self.logger.info(f"Set status of tx {transaction.id} to signed")
                 else:
                     self.logger.debug(f"Tx {transaction.id} does not have enough signatures")
-            self.stop_signal.wait(self.config['sleep_interval'])
+            self.stop_signal.wait(self.config.sleep_interval)
 
     def catch_up(self, to_block: int):
         from_block = SwapTrackerObject.last_processed('Ethereum') + 1
         self.logger.debug(f'Starting to catch up from block {from_block}')
-        if int(self.config['eth_start_block']) > from_block:
-            self.logger.debug(f'Due to config fast forwarding to block {self.config["eth_start_block"]}')
-            from_block = int(self.config['eth_start_block'])
+        if self.config.eth_start_block > from_block:
+            self.logger.debug(f'Due to config fast forwarding to block {self.config.eth_start_block}')
+            from_block = self.config.eth_start_block
             SwapTrackerObject.update_last_processed('Ethereum', from_block)
 
         if to_block <= 0 or to_block < from_block:
@@ -142,9 +143,14 @@ class SecretManager(Thread):
         try:
             s20 = self._get_s20(token)
             mint = mint_json(amount, tx_hash, recipient, s20.address)
-            unsigned_tx = create_unsigned_tx(self.config["scrt_swap_address"], mint, self.config['chain_id'],
-                                             self.config['enclave_key'], self.config["swap_code_hash"],
-                                             self.multisig.address)
+            unsigned_tx = create_unsigned_tx(
+                self.config.scrt_swap_address,
+                mint,
+                self.config.chain_id,
+                self.config.enclave_key,
+                self.config.swap_code_hash,
+                self.multisig.address
+            )
 
             tx = Swap(src_tx_hash=tx_hash, status=Status.SWAP_UNSIGNED, unsigned_tx=unsigned_tx, src_coin=token,
                       dst_coin=s20.name, dst_address=s20.address, src_network="Ethereum", sequence=self.sequence,

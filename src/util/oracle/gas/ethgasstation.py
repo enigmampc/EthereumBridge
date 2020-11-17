@@ -1,7 +1,7 @@
 import aiohttp
 
 from src.util.oracle.gas_source_base import GasSourceBase
-from src.util.config import Config
+from src.util.config import config
 
 
 class EthGasStation(GasSourceBase):
@@ -9,7 +9,7 @@ class EthGasStation(GasSourceBase):
 
     @staticmethod
     def _api_key():
-        return {'api-key': Config()['ethgastation_api_key']}
+        return {'api-key': config.ethgastation_api_key}
 
     def _params(self):
         return self._api_key()

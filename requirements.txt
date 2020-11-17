@@ -11,3 +11,4 @@ ethereum
 rlp
 ecdsa
 # rusty-rlp
+serde

@@ -27,7 +27,7 @@ services:
 
       # eth key option 1 - hardcoded private key
       - eth_private_key=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   # ethereum private key
-      - eth_account=0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb                     # ethereum account address
+      - eth_address=0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb                     # ethereum account address
 
       # provided by leader
       - multisig_acc_addr=secret18g2pvlz2ess848qkfwert28a2n7xqknjxjgesd

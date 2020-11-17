@@ -1,6 +1,5 @@
 # management
 db_name = "test_db"
-app_data = ".bridge_test"
 logger_name = "test logger"
 
 # app settings
