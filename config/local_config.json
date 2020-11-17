@@ -9,7 +9,7 @@
   "eth_start_block": 0,
   "sleep_interval": 2.0,
 
-  "secret_signers": [],
+  "secret_signers": "",
   "secretcli_home": "",
   "scrt_swap_address": "",
   "swap_code_hash": "",

@@ -99,7 +99,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
                     self.logger.info(f'Transaction {transaction_id} is valid. Signing & approving..')
                     self._approve_and_sign(transaction_id)
 
-                    obj = SwapTrackerObject.get(src=signer_id(self.account))
+                    obj = SwapTrackerObject.objects().get(src=signer_id(self.account))
                     if obj.nonce == -1:
                         obj.update(nonce=submission_event["blockNumber"])
 

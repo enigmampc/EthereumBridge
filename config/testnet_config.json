@@ -21,7 +21,7 @@
   "enclave_key": "io-master-cert.der",
   "multisig_acc_addr": "secret18g2pvlz2ess848qkfwert28a2n7xqknjxjgesd",
   "multisig_key_name": "ms3",
-  "secret_signers": ["secretpub1addwnpepqwamxgvaeayyhlsh5htwx9z8vh40vnm5fwlr5axzn6jheeyv3yxhv2qk5p7", "secretpub1addwnpepqf080zg7qhwh7wx777jfnyaemp366778edfc5yt7238m3vk03a75ypdtyzk", "secretpub1addwnpepqfr4h7p7ylhyjuv0fcef22wu28sgdqljhnz9dtrpafhs4hdkn4r9z3w2z2n"],
+  "secret_signers": "secretpub1addwnpepqwamxgvaeayyhlsh5htwx9z8vh40vnm5fwlr5axzn6jheeyv3yxhv2qk5p7, secretpub1addwnpepqf080zg7qhwh7wx777jfnyaemp366778edfc5yt7238m3vk03a75ypdtyzk, secretpub1addwnpepqfr4h7p7ylhyjuv0fcef22wu28sgdqljhnz9dtrpafhs4hdkn4r9z3w2z2n",
   "eth_funds_warning_threshold": "0.1",
   "scrt_funds_warning_threshold": "10"
 }

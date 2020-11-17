@@ -140,10 +140,7 @@ def configure_secretcli(config: Config):  # pylint: disable=too-many-statements,
     # set up multisig
     signers = []
 
-    if isinstance(config.secret_signers, str):
-        parsed_signers = config.secret_signers.replace(' ', '').split(',')
-    else:
-        parsed_signers = config.secret_signers
+    parsed_signers = config.secret_signers.replace(' ', '').split(',')
 
     for i, key in enumerate(parsed_signers):
         signers.append(f'ms_signer{i}')

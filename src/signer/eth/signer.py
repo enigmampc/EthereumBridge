@@ -38,8 +38,8 @@ class EtherSigner(Thread):
         self.event_listener = EthEventListener(contract, config)
         self.stop_event = Event()
         self.logger = get_logger(
-            db_name=config['db_name'],
-            logger_name=config.get('logger_name', f"{self.__class__.__name__}-{self.account[0:5]}")
+            db_name=config.db_name,
+            logger_name=config.logger_name or f"{self.__class__.__name__}-{self.account[0:5]}"
         )
         self.config = config
         self.signer = EthSignerImpl(contract, signer, dst_network, config)
@@ -69,7 +69,7 @@ class EtherSigner(Thread):
         """Returns the block from which we start scanning Ethereum for new tx"""
         obj = SwapTrackerObject.get_or_create(src=signer_id(self.account))
         if obj.nonce == -1:
-            obj.update(nonce=int(self.config.get('eth_start_block', 0)))
+            obj.update(nonce=self.config.eth_start_block)
 
         return obj.nonce
 

@@ -43,7 +43,7 @@ class Config(Model):
     multisig_wallet_address: fields.Str()  # Ethereum address
     multisig_acc_addr: fields.Str()  # SN address
     multisig_key_name: fields.Str()
-    secret_signers: fields.List(fields.Str)  # Would not work when fetching from the environment
+    secret_signers: fields.Str()
 
     # ethereum stuff
     eth_node: fields.Str()

@@ -18,7 +18,7 @@
 
   "keys_base_path": "",
   "multisig_acc_addr": "",
-  "secret_signers": [],
+  "secret_signers": "",
   "secretcli_home": "",
   "scrt_swap_address": "",
   "swap_code_hash": "",
