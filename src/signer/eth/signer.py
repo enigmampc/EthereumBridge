@@ -72,4 +72,3 @@ class EtherSigner(Thread):
             obj.update(nonce=self.config.eth_start_block)
 
         return obj.nonce
-
