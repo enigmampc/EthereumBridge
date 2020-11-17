@@ -5,7 +5,7 @@ import subprocess
 
 from src.db import database
 from src.db.collections.token_map import TokenPairing
-from src.util.config import Config
+from src.util.config import config
 from src.util.web3 import web3_provider
 
 signer_accounts = ['0xA48e330838A6167a68d7991bf76F2E522566Da33', '0x55810874c137605b96e9d2B76C3089fcC325ed5d',
@@ -17,15 +17,14 @@ signer_accounts = ['0xA48e330838A6167a68d7991bf76F2E522566Da33', '0x55810874c137
 
 def add_token(token: str, min_amount: int, contract_address: str = None):
 
-    cfg = Config()
 
     with open('./src/contracts/ethereum/compiled/MultiSigSwapWallet.json', 'r') as f:
         contract_source_code = json.loads(f.read())
 
-    w3 = web3_provider(cfg['eth_node'])
+    w3 = web3_provider(config.eth_node)
     account = w3.eth.account.from_key("0xb84db86a570359ca8a16ad840f7495d3d8a1b799b29ae60a2032451d918f3826")
 
-    contract = w3.eth.contract(address=contract_address or cfg['multisig_wallet_address'],
+    contract = w3.eth.contract(address=contract_address or config.multisig_wallet_address,
                                abi=contract_source_code['abi'],
                                bytecode=contract_source_code['data']['bytecode']['object'])
 
@@ -40,14 +39,12 @@ def add_token(token: str, min_amount: int, contract_address: str = None):
 
 def deploy_eth():
 
-    cfg = Config()
-
     with open('./src/contracts/ethereum/compiled/MultiSigSwapWallet.json', 'r') as f:
         contract_source_code = json.loads(f.read())
 
-    w3 = web3_provider(cfg['eth_node'])
+    w3 = web3_provider(config.eth_node)
     account = w3.eth.account.from_key("0xb84db86a570359ca8a16ad840f7495d3d8a1b799b29ae60a2032451d918f3826")
-    print(f"Deploying on {cfg['network']} from address {account.address}")
+    print(f"Deploying on {config.network} from address {account.address}")
     balance = w3.eth.getBalance(account.address, "latest")
     if balance < 1000000000000:
         print("You gotta have some cash dawg")
@@ -55,7 +52,7 @@ def deploy_eth():
 
     # Instantiate and deploy contract
     contract = w3.eth.contract(abi=contract_source_code['abi'], bytecode=contract_source_code['data']['bytecode']['object'])
-    tx = contract.constructor(signer_accounts, cfg['signatures_threshold'], "0xA48e330838A6167a68d7991bf76F2E522566Da33")
+    tx = contract.constructor(signer_accounts, config.signatures_threshold, "0xA48e330838A6167a68d7991bf76F2E522566Da33")
 
     nonce = w3.eth.getTransactionCount(account.address, "pending")
 
@@ -83,13 +80,11 @@ SCRT_SWAP_CODE_ID = 21
 
 def deploy_scrt():
 
-    configuration = Config()
-
     # docker exec -it secretdev secretcli tx compute store "/token.wasm.gz" --from a --gas 2000000 -b block -y
     #
     # docker exec -it secretdev secretcli tx compute store "/swap.wasm.gz" --from a --gas 2000000 -b block -y
     # 0xd475b764D1B2DCa1FE598247e5D49205E6Ac5E8e
-    multisig_account = configuration["multisig_acc_addr"]
+    multisig_account = config.multisig_acc_addr
     deployer = "secret18839huzvv5v6v0z3tm6um2ascnt6vrqfsp8d4g"
 
     tokens = [{"address": "0x1cB0906955623920c86A3963593a02a405Bb97fC", "name": "True USD", "decimals": 18, "symbol": "TUSD"},
@@ -102,7 +97,7 @@ def deploy_scrt():
     print(f"Swap contract deployed at: {swap_contract}")
     for token in tokens:
 
-        configuration['token_contract_addr'] = token
+        config.token_contract_addr = token
 
         scrt_token, scrt_token_code = init_token_contract(deployer, token["decimals"], f'S{token["symbol"]}',
                                                           f'Secret {token["name"]}', swap_contract)
@@ -110,7 +105,7 @@ def deploy_scrt():
         print(f"Secret {token['name']}, Deployed at: {scrt_token}")
         add_to_whitelist(swap_contract, scrt_token, scrt_token_code, pow(10, token["decimals"]))
 
-        uri = f"mongodb+srv://leader:6FXQ3gHXQQAkbpmI@cluster0.dka2m.mongodb.net/test_db2?retryWrites=true&w=majority"
+        uri = f""
         with database("uri"):
             try:
                 TokenPairing.objects().get(src_network="Ethereum", src_address=token["address"]).update(dst_address=scrt_token)
@@ -121,7 +116,7 @@ def deploy_scrt():
                              dst_network="Secret", dst_coin=f"secret-{token['name']}", dst_address=scrt_token,
                              decimals=18, name="Ethereum").save()
 
-    change_owner(swap_contract, configuration["multisig_acc_addr"])
+    change_owner(swap_contract, config.multisig_acc_addr)
 
 
     # configuration["swap_code_hash"] = swap_contract_hash
