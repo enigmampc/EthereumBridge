@@ -17,6 +17,11 @@ from src.util.logger import get_logger
 from src.util.oracle.oracle import BridgeOracle
 from src.util.secretcli import query_scrt_swap
 from src.util.web3 import erc20_contract, w3
+from src.db.collections.swaptrackerobject import SwapTrackerObject
+
+
+def signer_id(account):
+    return f'signer-{account}'
 
 
 class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-arguments
@@ -100,6 +105,11 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
                 if self._is_valid(data):
                     self.logger.info(f'Transaction {transaction_id} is valid. Signing & approving..')
                     self._approve_and_sign(transaction_id)
+
+                    obj = SwapTrackerObject.get(src=signer_id(self.account))
+                    if obj.nonce == -1:
+                        obj.update(nonce=submission_event["blockNumber"])
+
                 else:
                     self.logger.error(f'Failed to validate transaction: {data}')
             except ValueError as e:

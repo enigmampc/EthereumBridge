@@ -168,7 +168,7 @@ class Secret20Leader(Thread):
 
             # update sequence number - just in case we failed because we are out of sync
             self.manager.update_sequence()
-            self.logger.critical(f"Failed confirming broadcast for tx: {repr(document)}")
+            self.logger.critical(f"Failed confirming broadcast for tx: {repr(document)}, Hash: {tx_hash}, res: {res}")
             return False
         except (ValueError, KeyError) as e:
             # TX failed for whatever reason. Might be a duplicate, out of gas, or any other reason

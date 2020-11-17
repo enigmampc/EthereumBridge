@@ -22,7 +22,7 @@ def swap_eth():
 
     class SwapMessage(Message):
         def args(self):
-            return "secret13l72vhjngmg55ykajxdnlalktwglyqjqv9pkq4".encode(),
+            return "secret1nrys3wd626jgjrre2x8s36p0rrepym58z8d877".encode(),
 
     m = SwapMessage()
     tx_hash = send_contract_tx(multisig_wallet.contract, 'swap',
@@ -30,9 +30,10 @@ def swap_eth():
     print(repr(tx_hash))
 
 
-def swap_erc():
+def swap_erc(amount: int = 1):
     cfg = Config()
-    TRANSFER_AMOUNT = 100
+    base_amount = 1000000000000000000
+    TRANSFER_AMOUNT = base_amount * amount
     private_key = "b84db86a570359ca8a16ad840f7495d3d8a1b799b29ae60a2032451d918f3826"  # your private key here
     address = "0xA48e330838A6167a68d7991bf76F2E522566Da33"  # your account here
 
@@ -44,10 +45,10 @@ def swap_erc():
     account = w3.eth.account.from_key(private_key)
     nonce = w3.eth.getTransactionCount(account.address, "pending")
     # # multisig_wallet = MultisigWallet(web3_provider, config.multisig_wallet_address)
-    multisig_wallet = MultisigWallet(w3, "0x03A95ab8A5de93e47b3802cbA6295ebf85f4aA6f")
+    multisig_wallet = MultisigWallet(w3, "0xd475b764D1B2DCa1FE598247e5D49205E6Ac5E8e")
     #
     try:
-        erc20_contract = w3.eth.contract(address="0xF6fF95D53E08c9660dC7820fD5A775484f77183A", abi=contract_source_code['abi'])
+        erc20_contract = w3.eth.contract(address="0x1cB0906955623920c86A3963593a02a405Bb97fC", abi=contract_source_code['abi'])
         tx = erc20_contract.functions.approve(multisig_wallet.address, TRANSFER_AMOUNT)
 
         raw_tx = tx.buildTransaction(transaction={'from': account.address, 'gas': 3000000, 'nonce': nonce})
@@ -61,7 +62,7 @@ def swap_erc():
 
     class SwapMessage(Message):
         def args(self):
-            return "secret13l72vhjngmg55ykajxdnlalktwglyqjqv9pkq4".encode(), TRANSFER_AMOUNT, "0xF6fF95D53E08c9660dC7820fD5A775484f77183A"
+            return "secret1nrys3wd626jgjrre2x8s36p0rrepym58z8d877".encode(), TRANSFER_AMOUNT, "0x1cB0906955623920c86A3963593a02a405Bb97fC"
     #         return '0xA48e330838A6167a68d7991bf76F2E522566Da33', 0, 0, '0xA48e330838A6167a68d7991bf76F2E522566Da33', '0xa9059cbb00000000000000000000000055810874c137605b96e9d2b76c3089fcc325ed5d0000000000000000000000000000000000000000000000000000000000000001'
 
     owners = multisig_wallet.contract.functions.getOwners().call()
@@ -93,14 +94,35 @@ def swap_erc():
     # #
 
 
-    #tokens = multisig_wallet.contract.functions.SupportedTokens().call()
-    #print(tokens)
+    # tokens = multisig_wallet.contract.functions.SupportedTokens().call()
+    # print(tokens)
     m = SwapMessage()
     tx_hash = send_contract_tx(multisig_wallet.contract, 'swapToken',
                                address, bytes.fromhex(private_key), 1000000, value=0, args=m.args())
     print(repr(tx_hash))
 
 
+def random_swapper():
+    import random, time
+    try:
+        total = 0
+        tx_count = 0
+        while True:
+            sleep_time = random.randint(10, 600)
+            swap_amount = random.randint(1, 10)
+            number_of_swaps = random.randint(1, 5)
+            for _ in range(number_of_swaps):
+                swap_erc(swap_amount)
+                total += swap_amount
+                tx_count += 1
+
+            print(f"Total sent: {total}, in {tx_count} transactions")
+            time.sleep(sleep_time)
+
+    except KeyboardInterrupt:
+        print("Bye!")
+
+
 if __name__ == '__main__':
-    # swap_eth()
-    swap_erc()
+    # swap_erc()
+    random_swapper()

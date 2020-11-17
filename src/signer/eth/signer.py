@@ -3,7 +3,8 @@ from time import sleep
 
 from src.contracts.ethereum.event_listener import EthEventListener
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.signer.eth.impl import EthSignerImpl
+from src.db.collections.swaptrackerobject import SwapTrackerObject
+from src.signer.eth.impl import EthSignerImpl, signer_id
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
 from src.util.logger import get_logger
@@ -66,4 +67,9 @@ class EtherSigner(Thread):
 
     def choose_starting_block(self) -> int:
         """Returns the block from which we start scanning Ethereum for new tx"""
-        return int(self.config.get('eth_start_block', 0))
+        obj = SwapTrackerObject.get_or_create(src=signer_id(self.account))
+        if obj.nonce == -1:
+            obj.update(nonce=int(self.config.get('eth_start_block', 0)))
+
+        return obj.nonce
+
