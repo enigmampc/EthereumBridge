@@ -31,4 +31,4 @@ class TokenPairing(Document):
     dst_coin = StringField(required=True)
     decimals = IntField(required=True)
     name = StringField(required=True)
-    display_props = MapField(EmbeddedDocumentField(TokenPairingDisplayProps), required=True)
+    display_props = MapField(EmbeddedDocumentField(TokenPairingDisplayProps), required=False)
