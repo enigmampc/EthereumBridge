@@ -58,14 +58,11 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         )
 
         self.erc20 = erc20_contract()
-        self.catch_up_complete = False
 
         self.token_map = {}
         pairs = TokenPairing.objects(dst_network=dst_network, src_network=self.network)
         for pair in pairs:
-            self.token_map.update({pair.src_address: Token(pair.dst_address, pair.dst_coin)})
-
-        self.tracked_tokens = self.token_map.keys()
+            self.token_map[pair.src_address] = Token(pair.dst_address, pair.dst_coin)
 
     def _check_remaining_funds(self):
         remaining_funds = w3.eth.getBalance(self.account)
@@ -107,8 +104,8 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
 
             # either way we want to continue on
             finally:
-                obj = SwapTrackerObject.objects().get(src=signer_id(self.account))
-                obj.update(nonce=submission_event["blockNumber"])
+                swap = SwapTrackerObject.objects().get(src=signer_id(self.account))
+                swap.update(nonce=submission_event.blockNumber)
 
         self.logger.info(f'Swap from secret network to ethereum signed successfully: {data}')
 
@@ -120,13 +117,13 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
 
         # todo: validate fee
 
-        try:
-            if token == '0x0000000000000000000000000000000000000000':
-                token = 'native'
-                self.logger.info("Testing secret-ETH to ETH swap")
-            else:
-                self.logger.info(f"Testing {self.token_map[token].address} to {token} swap")
+        if token == '0x0000000000000000000000000000000000000000':
+            token = 'native'
+            self.logger.info("Testing secret-ETH to ETH swap")
+        else:
+            self.logger.info(f"Testing {self.token_map[token].address} to {token} swap")
 
+        try:
             swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.token_map[token].address)
         except subprocess.CalledProcessError as e:
             self.logger.error(f'Error querying transaction: {e}')
@@ -155,8 +152,8 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
             return False
 
         # explicitly convert to checksum in case one side isn't checksum address
-        dest = self.multisig_contract.provider.toChecksumAddress(swap_data['destination'])
-        if dest != self.multisig_contract.provider.toChecksumAddress(submission_data['dest']):
+        dest = w3.toChecksumAddress(swap_data['destination'])
+        if dest != w3.toChecksumAddress(submission_data['dest']):
             self.logger.error(f'Invalid transaction - {dest} does not match {submission_data["dest"]}')
             return False
 
@@ -188,11 +185,11 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         msg = message.Confirm(submission_id)
 
         data = self.multisig_contract.encode_data('confirmTransaction', *msg.args())
-        tx = self.multisig_contract.raw_transaction(self.signer.address, 0, data, gas_prices,
-                                                    gas_limit=self.multisig_contract.CONFIRM_GAS)
+        tx = self.multisig_contract.raw_transaction(
+            self.signer.address, 0, data, gas_prices, gas_limit=self.multisig_contract.CONFIRM_GAS
+        )
         tx = self.multisig_contract.sign_transaction(tx, self.signer)
         tx_hash = broadcast_transaction(tx)
 
-        # tx_hash = self.multisig_contract.confirm_transaction(self.account, self.private_key, gas_prices, msg)
         self.logger.info(msg=f"Signed transaction - signer: {self.account}, signed msg: {msg}, "
                              f"tx hash: {tx_hash.hex()}")

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from subprocess import CalledProcessError
-from typing import Iterable, List
+from typing import Iterable, List, Tuple, Any
 import threading
 
 from pymongo.errors import DuplicateKeyError
@@ -39,6 +39,30 @@ def get_tx_hash(nonce: str, token: str):
     result = f'{nonce}|{token}'
     print(result)
     return result
+
+
+def get_egress_swap_event(
+    swap_contract_address: str,
+    secret_coin_address: str,
+    native_coin_address: str,
+    coin_name: str,
+    nonce: int,
+):
+    swap_data = query_scrt_swap(nonce, swap_contract_address, secret_coin_address)
+    swap_json = swap_query_res(swap_data)
+
+    swap_event = SwapEvent(
+        id=get_tx_hash(swap_json['nonce'], swap_json['token']),
+        nonce=str(swap_json['nonce']),
+        dst_coin_name=coin_name,
+        dst_coin_address=native_coin_address,
+        src_coin_address=secret_coin_address,
+        direction=SwapDirection.FromSecretNetwork,
+        amount=int(swap_json['amount']),
+        sender=swap_json['source'],
+        recipient=swap_json['destination'],
+    )
+    return swap_event
 
 
 class Entity(ABC):
@@ -116,19 +140,8 @@ class EgressLeader(Entity):
                 next_nonce = swap_tracker.nonce + 1
                 self.logger.debug(f'Scanning token {secret_coin_address} for query #{next_nonce}')
 
-                swap_data = query_scrt_swap(next_nonce, self.config.scrt_swap_address, secret_coin_address)
-                swap_json = swap_query_res(swap_data)
-
-                swap_event = SwapEvent(
-                    id=get_tx_hash(swap_json['nonce'], swap_json['token']),
-                    nonce=str(swap_json['nonce']),
-                    dst_coin_name=token.name,
-                    dst_coin_address=token.address,
-                    src_coin_address=secret_coin_address,
-                    direction=SwapDirection.FromSecretNetwork,
-                    amount=int(swap_json['amount']),
-                    sender=swap_json['source'],
-                    recipient=swap_json['destination'],
+                swap_event = get_egress_swap_event(
+                    self.config.scrt_swap_address, secret_coin_address, token.address, token.name, next_nonce,
                 )
                 yield swap_event
 
@@ -241,8 +254,42 @@ class EgressSigner(Entity):
     def __init__(self, config: Config):
         super().__init__(config)
 
+        self._secret_token_map = {}
+        pairs = TokenPair.objects(network=Network.Ethereum)
+        for pair in pairs:
+            self._secret_token_map[pair.coin_address] = Token(pair.secret_coin_address, pair.secret_coin_name)
+
     def work(self):
         """Provided method - uses abstract methods to manage the swap process"""
+        for submission in self.get_new_submissions():
+            native_coin_address, nonce = self.get_token_and_nonce(submission)
+            swap_data = self._get_swap(native_coin_address, nonce)
+            if self.verify_submission(submission, swap_data):
+                self.approve(submission)
+
+    def _get_swap(self, native_coin_address: str, nonce: int) -> SwapEvent:
+        secret_coin_address = self._secret_token_map[native_coin_address].address
+        coin_name = self._secret_token_map[native_coin_address].name
+        swap_event = get_egress_swap_event(
+            self.config.scrt_swap_address, secret_coin_address, native_coin_address, coin_name, nonce
+        )
+        return swap_event
+
+    @abstractmethod
+    def get_new_submissions(self) -> Iterable[Any]:
+        yield
+
+    @abstractmethod
+    def get_token_and_nonce(self, submission: Any) -> Tuple[str, int]:
+        """return the address of the token on the foreign network, and the swap nonce"""
+        pass
+
+    @abstractmethod
+    def verify_submission(self, submission: Any, swap_event: SwapEvent) -> bool:
+        pass
+
+    @abstractmethod
+    def approve(self, submission: Any):
         pass
 
 
