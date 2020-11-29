@@ -1,14 +1,23 @@
-web3~=5.12.1
-mongoengine~=0.20.0
+# Misc
 blinker
 hexbytes~=0.2.1
-pymongo[srv]
+serde
+
+# Cryptography
 python-pkcs11
+pycryptodome
+ecdsa
+
+# Database
+mongoengine~=0.20.0
+pymongo[srv]
+
+# Web 2.0
 requests~=2.24.0
 aiohttp~=3.7.2
-pycryptodome
+
+# Web 3.0
 ethereum
 rlp
-ecdsa
 # rusty-rlp
-serde
+web3~=5.12.1

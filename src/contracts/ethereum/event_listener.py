@@ -1,10 +1,11 @@
+from collections import defaultdict
 from collections.abc import MutableMapping
 from itertools import count
 from threading import Event
 from time import sleep
-from typing import List, Callable, Iterator, Dict, Tuple, Union
+from typing import List, Callable, Iterator, Dict, Tuple, Union, DefaultDict
 
-from web3.contract import LogFilter, LogReceipt
+from web3.contract import LogFilter, LogReceipt, BlockIdentifier
 
 from src.contracts.ethereum.ethr_contract import EthereumContract
 from src.contracts.event_provider import EventProvider
@@ -13,10 +14,50 @@ from src.util.logger import get_logger
 from src.util.web3 import contract_event_in_range, w3
 
 
+class EventTracker:
+    def __init__(self, contract: EthereumContract, events: List[str] = None, confirmations=0):
+        self.contract = contract
+        self.confirmations = confirmations
+        self.events: List[str] = []
+        self.filters: Dict[str, LogFilter] = {}
+        self.pending_events: DefaultDict[str, List[LogReceipt]] = defaultdict(list)
+
+        if events is not None:
+            for event_name in events:
+                self.register_event(event_name, "latest")
+
+    def register_event(self, event_name: str, from_block: BlockIdentifier):
+        if event_name not in self.events:
+            self.events.append(event_name)
+
+        event = getattr(self.contract.contract.events, event_name)
+        event_filter = event.createFilter(fromBlock=from_block)
+        self.filters[event_name] = event_filter
+
+    def get_new_events(self, event_name: str) -> List[LogReceipt]:
+        current_block_number = w3.eth.blockNumber
+        pending_events = self.pending_events[event_name]
+        new_events = self.filters[event_name].get_new_entries()
+
+        ready_events = []
+        still_pending_events = []
+        for events in [pending_events, new_events]:
+            for event in events:
+                if self._is_event_confirmed(event, current_block_number):
+                    ready_events.append(event)
+                else:
+                    still_pending_events.append(event)
+
+        self.pending_events[event_name] = still_pending_events
+        return ready_events
+
+    def _is_event_confirmed(self, event: LogReceipt, block_number: int):
+        return event.blockNumber > (block_number - self.confirmations)
+
+
 class EthEventListener(EventProvider):
     """Tracks the block-chain for new transactions on a given address"""
     _ids = count(0)
-    _chain = "ETH"
 
     def __init__(self, contract: EthereumContract, config: Config, **kwargs):
         # Note: each event listener can listen to one contract at a time
@@ -100,16 +141,6 @@ class EthEventListener(EventProvider):
         evt_filter = event.createFilter(fromBlock=from_block, toBlock=to_block)
         for event in evt_filter.get_all_entries():
             self.pending_events.append((event_name, event))
-
-    def wait_for_block(self, number: int) -> int:
-        while True:
-            block = (w3.eth.blockNumber - self.confirmations)
-            if block >= number:
-                return block
-            sleep(self.config.sleep_interval)
-
-    def confirmation_manager(self):
-        pass
 
     def get_new_events(self):
         """

@@ -6,8 +6,7 @@ from typing import Dict
 from mongoengine import OperationError
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.db.collections.eth_swap import Swap, Status
-from src.db.collections.signatures import Signatures
+from src.db import Swap, Status, Signatures
 from src.util.common import temp_file
 from src.util.config import Config
 from src.util.logger import get_logger

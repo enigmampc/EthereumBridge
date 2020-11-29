@@ -3,7 +3,7 @@ from enum import Enum, auto
 
 from mongoengine import Document, StringField, DateTimeField, signals, IntField
 
-from src.db.collections.common import EnumField
+from .common import EnumField
 
 
 class Status(Enum):

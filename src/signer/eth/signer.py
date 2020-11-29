@@ -3,7 +3,7 @@ from time import sleep
 
 from src.contracts.ethereum.event_listener import EthEventListener
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.db.collections.swaptrackerobject import SwapTrackerObject
+from src.db import SwapTrackerObject
 from src.signer.eth.impl import EthSignerImpl, signer_id
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase

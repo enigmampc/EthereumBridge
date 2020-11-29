@@ -219,7 +219,7 @@ contract MultiSigSwapWallet {
     * Send funds to multisig account, and emit a SwapToken event for emission to the Secret Network
     *
     * @param _recipient: The intended recipient's Secret Network address.
-    * @param _amount: The amount of ENG tokens to be itemized.
+    * @param _amount: The amount of ERC20 tokens to be itemized.
     */
     function swapToken(bytes memory _recipient, uint256 _amount, address _tokenAddress)
     public

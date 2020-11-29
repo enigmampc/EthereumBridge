@@ -7,9 +7,7 @@ from mongoengine.errors import NotUniqueError
 from src.contracts.ethereum.event_listener import EthEventListener
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import mint_json
-from src.db.collections.eth_swap import Swap, Status
-from src.db.collections.signatures import Signatures
-from src.db.collections.swaptrackerobject import SwapTrackerObject
+from src.db import Swap, Status, Signatures, SwapTrackerObject
 from src.signer.secret20.signer import SecretAccount
 from src.util.common import Token
 from src.util.config import Config

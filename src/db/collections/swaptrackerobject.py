@@ -2,8 +2,22 @@ from mongoengine import Document, IntField, DoesNotExist, MultipleObjectsReturne
 
 
 class SwapTrackerObject(Document):
+    """This type is used in different ways by different contexts.
+
+    For eth leader:
+        src - secret contract address
+        nonce - amount of swaps
+
+    For eth signer:
+        src - "signer-{signer_address}"
+        nonce - last eth block that was inspected
+
+    For secret leader:
+        src - "Ethereum"
+        nonce - last eth block that was inspected
+    """
     nonce = IntField(required=True)
-    src = StringField(required=True, unique=True)
+    src = StringField(required=True, unique=True)  # secret contract address
 
     @classmethod
     def last_processed(cls, src: str):

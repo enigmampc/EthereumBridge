@@ -54,18 +54,7 @@ class Transaction(rlp.Serializable):
 
         to = utils.normalize_address(to, allow_blank=True)
 
-        super(
-            Transaction,
-            self).__init__(
-            nonce,
-            gasprice,
-            startgas,
-            to,
-            value,
-            data,
-            v,
-            r,
-            s)
+        super(Transaction, self).__init__(nonce, gasprice, startgas, to, value, data, v, r, s)
 
         if self.gasprice >= TT256 or self.startgas >= TT256 or \
                 self.value >= TT256 or self.nonce >= TT256:
@@ -123,8 +112,7 @@ class Transaction(rlp.Serializable):
             # rawhash = utils.sha3(rlpdata)
         else:
             assert 1 <= network_id < 2**63 - 18
-            rlpdata = rlp.encode(rlp.infer_sedes(self).serialize(self)[
-                                 :-3] + [network_id, b'', b''])
+            rlpdata = rlp.encode(rlp.infer_sedes(self).serialize(self)[:-3] + [network_id, b'', b''])
         return rlpdata
 
     # def mpc_sign(self, r: str, s: str, v: str, network_id):

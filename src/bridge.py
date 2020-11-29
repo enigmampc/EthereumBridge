@@ -51,10 +51,6 @@ NETWORK_PARAMS = {
 }
 
 
-tracked_tokens_eth = {"native": Token("secret1hx84ff3h4m8yuvey36g9590pw9mm2p55cwqnm6", "secret-eth")}
-tracked_tokens_scrt = {"secret1hx84ff3h4m8yuvey36g9590pw9mm2p55cwqnm6": Token("native", "eth")}
-
-
 def run_bridge():  # pylint: disable=too-many-statements
     runners = []
     logger = get_logger(logger_name='runner', loglevel=config.log_level)

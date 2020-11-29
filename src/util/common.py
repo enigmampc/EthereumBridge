@@ -26,7 +26,7 @@ def temp_files(data: List[str], logger) -> Generator:
     for d in data:
         temp.append(temp_file(d))
 
-    yield list(manager.__enter__() for manager in temp)
+    yield [manager.__enter__() for manager in temp]
     for manager in temp:
         try:
             manager.__exit__(*sys.exc_info())
@@ -44,19 +44,17 @@ def module_dir(module) -> Path:
     return Path(module.__file__).parent
 
 
-# Token = namedtuple('Token', ['address', 'name', 'code_hash'], defaults=(None,) * 3)
 @dataclass
 class Token:
+    """Name and address of a native token, on some network"""
     address: str = None
     name: str = None
-    code_hash: str = None
-    token_contract: str = None
 
 
 SecretAccount = namedtuple('SecretAccount', ['address', 'name'])
 
 
 def bytes_from_hex(s: str):
-    if s[0:1] == '0x':
+    if s[:2] == '0x':
         return bytes.fromhex(s[2:])
     return bytes.fromhex(s)

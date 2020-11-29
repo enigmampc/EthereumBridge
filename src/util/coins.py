@@ -5,6 +5,7 @@ class Currency(Enum):
     USD = auto()
 
 
+# TODO these types should probably be moved to the oracle module
 class Coin(Enum):
     # todo: Determine what we want to start with
     Secret = auto()
@@ -15,6 +16,7 @@ class Coin(Enum):
     Compound = auto()
 
 
+# TODO move this to the db?
 erc20_db = {
     "0xdac17f958d2ee523a2206206994597c13d831ec7": {
         "symbol": "USDT",

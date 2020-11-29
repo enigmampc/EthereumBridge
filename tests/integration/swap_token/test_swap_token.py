@@ -7,10 +7,7 @@ from time import sleep
 
 from web3 import Web3
 
-from src.db.collections.eth_swap import Swap, Status
-from src.db.collections.swaptrackerobject import SwapTrackerObject
-from src.db.collections.signatures import Signatures
-from src.db.collections.token_map import TokenPairing
+from src.db import Swap, Status, SwapTrackerObject, Signatures, TokenPairing
 
 from src.util.common import project_base_path
 from src.util.config import Config

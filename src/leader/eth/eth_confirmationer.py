@@ -3,18 +3,17 @@ from typing import Dict
 from web3.datastructures import AttributeDict
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.db.collections.eth_swap import Swap, Status
-from src.db.collections.swaptrackerobject import SwapTrackerObject
+from src.db import Swap, Status, SwapTrackerObject
 from src.util.common import Token
 
 
 def build_hash(nonce, token):
-    print(f'{nonce}|{token}')
-    return f'{nonce}|{token}'
+    result = f'{nonce}|{token}'
+    print(result)
+    return result
 
 
 class EthConfirmer:
-
     def __init__(self, multisig_contract: MultisigWallet, token_map: Dict[str, Token]):
         self.multisig_contract = multisig_contract
         self.token_map = token_map
@@ -40,10 +39,6 @@ class EthConfirmer:
         self._set_tx_result(nonce, scrt_token, success=success)
 
     @staticmethod
-    def _confirmer_id(token: str):
-        return f'confirmer-{token}'
-
-    @staticmethod
     def get_swap(nonce, token):
         return Swap.objects().get(src_tx_hash=build_hash(nonce, token))
 
@@ -55,6 +50,3 @@ class EthConfirmer:
             swap.update(status=Status.SWAP_CONFIRMED)
         else:
             swap.update(status=Status.SWAP_FAILED)
-
-        obj = SwapTrackerObject.get_or_create(self._confirmer_id(token))
-        obj.update(nonce=nonce)

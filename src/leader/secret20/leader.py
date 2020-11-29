@@ -6,9 +6,7 @@ from typing import List
 from mongoengine import OperationError
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.db.collections.eth_swap import Swap, Status
-from src.db.collections.signatures import Signatures
-from src.db.collections.token_map import TokenPairing
+from src.db import Swap, Status, Signatures, TokenPairing
 from src.leader.secret20.manager import SecretManager
 from src.signer.secret20.signer import SecretAccount
 from src.util.common import temp_file, temp_files, Token

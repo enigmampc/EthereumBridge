@@ -4,7 +4,7 @@ import string
 import subprocess
 
 from src.db import database
-from src.db.collections.token_map import TokenPairing
+from src.db import TokenPairing
 from src.util.config import config
 from src.util.web3 import web3_provider
 
@@ -115,7 +115,7 @@ def deploy_scrt():
                 print("Added new pair to db")
                 TokenPairing(src_network="Ethereum", src_coin=token["name"], src_address=token["address"],
                              dst_network="Secret", dst_coin=f"secret-{token['name']}", dst_address=scrt_token,
-                             decimals=18, name="Ethereum").save()
+                             decimals=18).save()
 
     change_owner(swap_contract, config.multisig_acc_addr)
 
