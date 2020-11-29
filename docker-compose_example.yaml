@@ -4,7 +4,7 @@ version: "3"
 services:
   signer:
     hostname: signer
-    image: enigmampc/eth-bridge-0.8.0:latest
+    image: enigmampc/eth-bridge:0.8.0
     volumes:
       - /replace/this/with/keys/path/:/root/keys  # map the path where the file specified by "secret_key_name" exists
     environment:
@@ -30,11 +30,11 @@ services:
       - eth_address=0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb                     # ethereum account address
 
       # provided by leader
-      - multisig_acc_addr=secret18g2pvlz2ess848qkfwert28a2n7xqknjxjgesd
-      - multisig_wallet_address=0x03A95ab8A5de93e47b3802cbA6295ebf85f4aA6f
-      - secret_signers=secretpub1addwnpepqwamxgvaeayyhlsh5htwx9z8vh40vnm5fwlr5axzn6jheeyv3yxhv2qk5p7,secretpub1addwnpepqf080zg7qhwh7wx777jfnyaemp366778edfc5yt7238m3vk03a75ypdtyzk,secretpub1addwnpepqfr4h7p7ylhyjuv0fcef22wu28sgdqljhnz9dtrpafhs4hdkn4r9z3w2z2n
-      - scrt_swap_address=secret1zw0kfxrxgrs5l087mjm79hcmj3y8z6tlkaegyy
-      - swap_code_hash=11ECBAFB0574EBCFA8AE3C884D22EB97EEC7275676661F32660FCE48CE86F5FB
+      - multisig_acc_addr=secret1v9gjeejjzrp80wysulevc9dgq2fn80ahfyrvsy
+      - multisig_wallet_address=0x3375630Eff4AAcBF59195470F60aabC218e808D6
+      - secret_signers=secretpub1addwnpepqfr4h7p7ylhyjuv0fcef22wu28sgdqljhnz9dtrpafhs4hdkn4r9z3w2z2n,secretpub1addwnpepq04yhuxra8kyplmx93tjjth6nt8a0879406f902sgmw7xjqcvdkzx2nmxs9,secretpub1addwnpepqgq27f8qgq6cew6clwg3cwvsg9llpqenk8xwl79wwzapjjt3ztz9ka5zfg6,secretpub1addwnpepq072jrrygc8n6vr79eq2de2qf85t58l3wd0p3cgn7wvfsg4kq7urqau20y4,secretpub1addwnpepqdtrytnaqy8m6qrwv3metetwq9xkyf3pn7acw89wehdaz66ltzfhxp6h029
+      - scrt_swap_address=secret1qdazdmdq65cgrpgmkcqen2u8yg3e9h6eh9ld99
+      - swap_code_hash=9263D9A2026FECC5A99534E84706230AAC6590AA342434A84B7F8A43DFAAF9E3
 
       # eth key option 2 - pkcs11 module (only softhsm supported currently)
       # volumes: (you may want to map the token storage path to a path inside the container)

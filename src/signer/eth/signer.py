@@ -34,7 +34,6 @@ class EtherSigner(Thread):
         **kwargs
     ):
         self.account = signer.address
-        # self.private_key = private_key
         self.event_listener = EthEventListener(contract, config)
         self.stop_event = Event()
         self.logger = get_logger(

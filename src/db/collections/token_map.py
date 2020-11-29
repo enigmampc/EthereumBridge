@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, IntField
+from mongoengine import Document, StringField, IntField, DictField
 
 
 class TokenPairing(Document):
@@ -13,3 +13,5 @@ class TokenPairing(Document):
     dst_address = StringField(required=True, unique=True)
 
     decimals = IntField(required=True)
+    name = StringField(required=True)
+    display_props = DictField(required=False)

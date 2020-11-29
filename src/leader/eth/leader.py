@@ -62,7 +62,7 @@ class EtherLeader(Thread):
             logger_name=config.logger_name or self.__class__.__name__
         )
 
-        self.confirmer = EthConfirmer(self.multisig_wallet, confirmer_token_map)
+        self.confirmer = EthConfirmer(self.multisig_wallet, confirmer_token_map, self.logger)
         self.event_listener = EthEventListener(self.multisig_wallet, config)
 
         self.stop_event = Event()
@@ -189,7 +189,7 @@ class EtherLeader(Thread):
             except (DuplicateKeyError, NotUniqueError):
                 pass
 
-    def _chcek_remaining_funds(self):
+    def _check_remaining_funds(self):
         remaining_funds = w3.eth.getBalance(self.signer.address)
         self.logger.info(f'ETH leader remaining funds: {w3.fromWei(remaining_funds, "ether")} ETH')
         fund_warning_threshold = self.config.eth_funds_warning_threshold
@@ -202,7 +202,7 @@ class EtherLeader(Thread):
         else:
             gas_price = None
 
-        self._chcek_remaining_funds()
+        self._check_remaining_funds()
 
         data = self.multisig_wallet.encode_data('submitTransaction', *msg.args())
         tx = self.multisig_wallet.raw_transaction(

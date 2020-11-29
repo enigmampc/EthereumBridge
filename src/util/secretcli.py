@@ -152,7 +152,7 @@ def configure_secretcli(config: Config):  # pylint: disable=too-many-statements,
         '--multisig-threshold', f'{config.signatures_threshold}'
     ])
 
-    logger.debug(f'importing private key from {config.secret_key_file} with name {config.secret_key_name}')
+    logger.info(f'importing private key from {config.secret_key_file} with name {config.secret_key_name}')
 
     # import key
     key_path = os.path.join(f'{config.keys_base_path}', f'{config.secret_key_file}')

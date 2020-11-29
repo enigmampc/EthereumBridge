@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import Dict
 
 from web3.datastructures import AttributeDict
@@ -8,15 +9,14 @@ from src.util.common import Token
 
 
 def build_hash(nonce, token):
-    result = f'{nonce}|{token}'
-    print(result)
-    return result
+    return f'{nonce}|{token}'
 
 
 class EthConfirmer:
-    def __init__(self, multisig_contract: MultisigWallet, token_map: Dict[str, Token]):
+    def __init__(self, multisig_contract: MultisigWallet, token_map: Dict[str, Token], logger: Logger):
         self.multisig_contract = multisig_contract
         self.token_map = token_map
+        self.logger = logger
 
     def withdraw(self, event: AttributeDict):
         self._handle(event, True)
@@ -30,7 +30,6 @@ class EthConfirmer:
         nonce = data['nonce']
         token = data['token']
 
-        print(f'{self.token_map=}')
         if token == '0x0000000000000000000000000000000000000000':
             scrt_token = self.token_map['native'].address
         else:
@@ -43,7 +42,13 @@ class EthConfirmer:
         return Swap.objects().get(src_tx_hash=build_hash(nonce, token))
 
     def _set_tx_result(self, nonce, token, success=True):
-        swap = self.get_swap(nonce, token)
+        try:
+            swap = self.get_swap(nonce, token)
+        except Exception as e:
+            self.logger.error(
+                f'Error handling swap {build_hash(nonce, token)}: {e}')
+            return
+
         if swap.status != Status.SWAP_SUBMITTED:
             return
         if success:

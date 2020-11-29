@@ -115,7 +115,7 @@ pub enum HandleMsg {
     // Mint
     Mint {
         amount: Uint128,
-        address: HumanAddr,
+        recipient: HumanAddr,
         padding: Option<String>,
     },
     AddMinters {
