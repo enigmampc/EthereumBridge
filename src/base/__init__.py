@@ -93,9 +93,9 @@ class EgressLeader(Entity):
 
     def work(self):
         """This is the high-level entry point for the leader"""
-        for swap_event in self.get_new_swap_events():
+        for swap_event in self._get_new_swap_events():
             try:
-                tx_hash = self.handle_swap(swap_event)
+                tx_hash = self._handle_swap(swap_event)
                 self._store_swap(swap_event, tx_hash)
             except SwapFailed as err:
                 self._store_failed_swap(err.event, err.data)
@@ -108,7 +108,7 @@ class EgressLeader(Entity):
         for swap in failed_swaps:
             self._mark_swap_failed(swap)
 
-    def get_new_swap_events(self) -> Iterable[SwapEvent]:
+    def _get_new_swap_events(self) -> Iterable[SwapEvent]:
         """Leads the signers responsible for swaps out of the Secret Network"""
         for secret_coin_address, token in self._token_map.items():
             try:
@@ -140,7 +140,7 @@ class EgressLeader(Entity):
                 if b'ERROR: query result: encrypted: Failed to get swap for token' not in e.stderr:
                     self.logger.error(f"Failed to query swap: stdout: {e.stdout} stderr: {e.stderr}")
 
-    def handle_swap(self, swap_event: SwapEvent) -> str:
+    def _handle_swap(self, swap_event: SwapEvent) -> str:
         if swap_event.dst_coin_address == self.native_coin_address():
             return self.handle_native_swap(swap_event)
         else:
@@ -204,11 +204,6 @@ class EgressLeader(Entity):
         if swap.status != Status.SWAP_SUBMITTED:
             return
         swap.update(status=Status.SWAP_FAILED)
-
-    @staticmethod
-    def should_continue():
-        """Override this to set custom stop conditions"""
-        return True
 
     @abstractmethod
     def native_network(self) -> Network:
