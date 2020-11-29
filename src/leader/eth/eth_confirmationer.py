@@ -9,6 +9,7 @@ from src.util.common import Token
 
 from logging import Logger
 
+
 def build_hash(nonce, token):
     return f'{nonce}|{token}'
 
@@ -51,7 +52,8 @@ class EthConfirmer:
         try:
             swap = self.get_swap(nonce, token)
         except Exception as e:
-            self.logger.error(f'Error handling swap {build_hash(nonce, token)}: {e}')
+            self.logger.error(
+                f'Error handling swap {build_hash(nonce, token)}: {e}')
             return
 
         if swap.status != Status.SWAP_SUBMITTED:
