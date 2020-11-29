@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, IntField, MapField, EmbeddedDocumentField
+from mongoengine import Document, StringField, IntField, DictField
 
 
 class TokenRecord(Document):
@@ -14,10 +14,10 @@ class TokenMapRecord(Document):
     swap_token = TokenRecord
 
 
-class TokenPairingDisplayProps(Document):
-    image = StringField(required=True)
-    label = StringField(required=True)
-    symbol = StringField(required=True)
+# class TokenPairingDisplayProps(EmbeddedDocument):
+#     image = StringField(required=True)
+#     label = StringField(required=True)
+#     symbol = StringField(required=True)
 
 
 class TokenPairing(Document):
@@ -32,5 +32,4 @@ class TokenPairing(Document):
     dst_coin = StringField(required=True)
     decimals = IntField(required=True)
     name = StringField(required=True)
-    display_props = MapField(EmbeddedDocumentField(
-        TokenPairingDisplayProps), required=False)
+    display_props = DictField(required=False)
