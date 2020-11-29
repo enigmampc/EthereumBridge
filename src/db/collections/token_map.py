@@ -19,6 +19,7 @@ class TokenPairingDisplayProps(Document):
     label = StringField(required=True)
     symbol = StringField(required=True)
 
+
 class TokenPairing(Document):
     # Blockchain name
     src_network = StringField(required=True)
@@ -31,4 +32,5 @@ class TokenPairing(Document):
     dst_coin = StringField(required=True)
     decimals = IntField(required=True)
     name = StringField(required=True)
-    display_props = MapField(EmbeddedDocumentField(TokenPairingDisplayProps), required=False)
+    display_props = MapField(EmbeddedDocumentField(
+        TokenPairingDisplayProps), required=False)
