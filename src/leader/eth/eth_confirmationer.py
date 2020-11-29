@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import Dict
 
 from web3.datastructures import AttributeDict
@@ -6,8 +7,6 @@ from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.db.collections.eth_swap import Swap, Status
 from src.db.collections.swaptrackerobject import SwapTrackerObject
 from src.util.common import Token
-
-from logging import Logger
 
 
 def build_hash(nonce, token):
