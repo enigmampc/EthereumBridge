@@ -24,7 +24,7 @@ class EthEgressLeader(EgressLeader):
         multisig_contract: MultisigWallet,
         signer: CryptoManagerBase,
         config: Config,
-    ):
+    ):  # pylint: disable=duplicate-code
         super().__init__(config)
         self._multisig_contract = multisig_contract
         self._erc20_interface = erc20_contract()
