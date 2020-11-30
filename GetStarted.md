@@ -78,7 +78,11 @@ Of all available config parameters, the ones that require setting environment va
 
 We recommend setting an .env file and using docker-compose, but you can also use `docker run` or any other docker runner.
 
-### Step 5 - Start the signer
+### Step 5 - create `id_tx_io.json`
+
+Create a new file, in the path specified by `/replace/this/with/keys/path/`, called `id_tx_io.json`. This file will contain the shared transactional key, so the signers can decrypt the transactions that the leader creates. Ask on the TG channel for this key, as pasting a private key on a public repo is not a good practice:)
+
+### Step 6 - Start the signer
 
 `docker-compose up`
 
