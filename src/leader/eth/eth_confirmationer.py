@@ -1,10 +1,12 @@
 from logging import Logger
 from typing import Dict
 
+from pymongo.errors import DuplicateKeyError
+from mongoengine import NotUniqueError
 from web3.datastructures import AttributeDict
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.db import Swap, Status, SwapTrackerObject
+from src.db import Swap, Status
 from src.util.common import Token
 
 
@@ -44,7 +46,7 @@ class EthConfirmer:
     def _set_tx_result(self, nonce, token, success=True):
         try:
             swap = self.get_swap(nonce, token)
-        except Exception as e:
+        except (DuplicateKeyError, NotUniqueError) as e:
             self.logger.error(
                 f'Error handling swap {build_hash(nonce, token)}: {e}')
             return

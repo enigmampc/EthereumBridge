@@ -91,7 +91,7 @@ class EthEgressLeader(EgressLeader):
             tx_hash = self._submit_swap(msg)
         except (ValueError, TransactionNotFound) as e:
             self.logger.critical(f"Failed to broadcast transaction for msg {repr(msg)}: {e}")
-            raise SwapFailed(swap_event, data)
+            raise SwapFailed(swap_event, data) from e
 
         return tx_hash
 

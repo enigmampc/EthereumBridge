@@ -10,7 +10,7 @@ from src.leader.secret20 import Secret20Leader
 from src.signer.eth.signer import EtherSigner
 from src.signer.secret20 import Secret20Signer
 from src.signer.secret20.signer import SecretAccount
-from src.util.common import Token, bytes_from_hex
+from src.util.common import bytes_from_hex
 from src.util.config import config
 from src.util.crypto_store.local_crypto_store import LocalCryptoStore
 from src.util.crypto_store.pkcs11_crypto_store import Pkcs11CryptoStore

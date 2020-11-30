@@ -1,7 +1,8 @@
 from mongoengine import Document, StringField, IntField
 
-from .common import Network
 from src.db import EnumField
+
+from .common import Network
 
 
 # TODO replace the TokenPairing type with this type

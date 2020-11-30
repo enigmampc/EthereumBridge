@@ -285,7 +285,7 @@ class EgressSigner(Entity):
         pass
 
     @abstractmethod
-    def verify_submission(self, submission: Any, swap_event: SwapEvent) -> bool:
+    def verify_submission(self, submission_data: Any, swap_event: SwapEvent) -> bool:
         pass
 
     @abstractmethod
