@@ -49,6 +49,7 @@ class Token:
     """Name and address of a native token, on some network"""
     address: str = None
     name: str = None
+    decimals: int = 0
 
 
 SecretAccount = namedtuple('SecretAccount', ['address', 'name'])

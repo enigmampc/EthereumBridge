@@ -4,7 +4,7 @@ import aiohttp
 from aiohttp.client_exceptions import ClientConnectionError
 from aiohttp.web_exceptions import HTTPError
 
-from src.util.coins import Currency, Coin
+from src.util.oracle.coins import Currency, Coin
 from src.util.oracle.price_source_base import PriceSourceBase
 
 
@@ -12,10 +12,11 @@ class CoinGecko(PriceSourceBase):
 
     API_URL = "https://api.coingecko.com/api/v3/simple/"
 
-    coin_map = {Coin.Secret: "secret",
-                Coin.Ethereum: "ethereum",
-                Coin.Tether: "usdt",
-                }
+    coin_map = {
+        Coin.Secret: "secret",
+        Coin.Ethereum: "ethereum",
+        Coin.Tether: "usdt",
+    }
 
     currency_map = {Currency.USD: "usd"}
 

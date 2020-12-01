@@ -9,7 +9,7 @@ from src.util.oracle.price.coingecko import CoinGecko
 from .gas_source_base import GasSourceBase
 from .price.compound_price import CompoundPriceOracle
 from .price_source_base import PriceSourceBase
-from ..coins import Currency, Coin
+from src.util.oracle.coins import Currency, Coin
 
 
 class Oracle:

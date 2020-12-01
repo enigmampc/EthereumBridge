@@ -8,7 +8,7 @@ from src.contracts.ethereum import message
 from src.contracts.ethereum.ethr_contract import broadcast_transaction
 from src.contracts.ethereum.event_listener import EventTracker
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.util.coins import Coin, Erc20Info
+from src.util.oracle.coins import Coin
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
 from src.util.oracle.oracle import BridgeOracle
@@ -60,8 +60,8 @@ class EthEgressLeader(EgressLeader):
         self._erc20_interface.address = swap_event.dst_coin_address
 
         if self.config.network == "mainnet":
-            decimals = Erc20Info.decimals(swap_event.dst_coin_address)
-            x_rate = BridgeOracle.x_rate(Coin.Ethereum, Erc20Info.coin(swap_event.dst_coin_address))
+            decimals = self._token_map[swap_event.src_coin_address].decimals
+            x_rate = BridgeOracle.x_rate(Coin.Ethereum, Coin(swap_event.dst_coin_name))
             gas_price = BridgeOracle.gas_price()
             fee = BridgeOracle.calculate_fee(
                 self._multisig_contract.SUBMIT_GAS, gas_price, decimals, x_rate, swap_event.amount

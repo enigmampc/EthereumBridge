@@ -1,4 +1,4 @@
-from src.util.coins import Currency, Coin
+from src.util.oracle.coins import Currency, Coin
 from src.util.oracle.oracle import Oracle
 
 

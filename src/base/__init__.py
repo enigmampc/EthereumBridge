@@ -107,11 +107,15 @@ class EgressLeader(Entity):
         pairs = TokenPair.objects(network=Network.Ethereum)
         # self.*_token_map lets us easily find the details of tokens
         # in one network using the address of the token in another.
+        self._token_name_map = {}
         self._token_map = {}
         self._secret_token_map = {}
         for pair in pairs:
-            self._token_map[pair.secret_coin_address] = Token(pair.coin_address, pair.coin_name)
-            self._secret_token_map[pair.coin_address] = Token(pair.secret_coin_address, pair.secret_coin_name)
+            self._token_name_map[pair.coin_address] = pair.coin_name
+            self._token_map[pair.secret_coin_address] = Token(pair.coin_address, pair.coin_name, pair.decimals)
+            self._secret_token_map[pair.coin_address] = Token(
+                pair.secret_coin_address, pair.secret_coin_name, pair.decimals
+            )
 
         self._swap_tracker = {sec_addr: SwapTrackerObject.get_or_create(src=sec_addr) for sec_addr in self._token_map}
 

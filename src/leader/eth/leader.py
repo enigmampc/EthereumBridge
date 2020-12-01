@@ -12,7 +12,7 @@ from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import swap_query_res, get_swap_id
 from src.db import Swap, Status, SwapTrackerObject, TokenPairing
 from src.leader.eth.eth_confirmationer import EthConfirmer
-from src.util.coins import Erc20Info, Coin
+from src.util.oracle.coins import Coin
 from src.util.common import Token
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
@@ -46,11 +46,14 @@ class EtherLeader(Thread):
         self.erc20 = erc20_contract()
 
         pairs = TokenPairing.objects(dst_network=dst_network, src_network=self.network)
+        self.token_name_map = {}
         self.token_map = {}
         confirmer_token_map = {}
         for pair in pairs:
+            self.token_name_map[pair.src_address] = pair.src_coin
             self.token_map[pair.dst_address] = Token(pair.src_address, pair.src_coin)
             confirmer_token_map[pair.src_address] = Token(pair.dst_address, pair.dst_coin)
+        self.secret_token_map = confirmer_token_map
 
         self.swap_tracker = {token: SwapTrackerObject.get_or_create(src=token) for token in self.token_map}
 
@@ -129,8 +132,8 @@ class EtherLeader(Thread):
 
     def _tx_erc20_params(self, amount, dest_address, dst_token):
         if self.config.network == "mainnet":
-            decimals = Erc20Info.decimals(dst_token)
-            x_rate = BridgeOracle.x_rate(Coin.Ethereum, Erc20Info.coin(dst_token))
+            decimals = self.secret_token_map[dst_token].decimals
+            x_rate = BridgeOracle.x_rate(Coin.Ethereum, Coin(self.token_name_map[dst_token]))
             gas_price = BridgeOracle.gas_price()
             fee = BridgeOracle.calculate_fee(self.multisig_wallet.SUBMIT_GAS, gas_price, decimals, x_rate, amount)
         # for testing mostly
