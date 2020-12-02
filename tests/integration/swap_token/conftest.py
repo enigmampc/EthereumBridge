@@ -142,9 +142,9 @@ def setup(make_project, db, configuration: Config, erc20_token):
 
     # add token pairings to db
     TokenPairing(src_network="Ethereum", src_coin="ETH", src_address="native",
-                 dst_network="Secret", dst_coin="secret-ETH", dst_address=eth_token, decimals=18).save()
+                 dst_network="Secret", dst_coin="secret-ETH", dst_address=eth_token, decimals=18, name="ETH").save()
     TokenPairing(src_network="Ethereum", src_coin="ERC", src_address=erc20_token.address,
-                 dst_network="Secret", dst_coin="secret-ERC", dst_address=erc_token, decimals=18).save()
+                 dst_network="Secret", dst_coin="secret-ERC", dst_address=erc_token, decimals=18, name="ERC").save()
 
     configuration.swap_code_hash = swap_contract_hash
     configuration.scrt_swap_address = swap_contract
