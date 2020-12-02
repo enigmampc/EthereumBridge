@@ -104,7 +104,7 @@ class EgressLeader(Entity):
     def __init__(self, config: Config):
         super().__init__(config)
 
-        pairs = TokenPair.objects(network=Network.Ethereum)
+        pairs = TokenPair.objects(network=self.native_network())
         # self.*_token_map lets us easily find the details of tokens
         # in one network using the address of the token in another.
         self._token_name_map = {}
@@ -163,8 +163,8 @@ class EgressLeader(Entity):
         else:
             return self.handle_non_native_swap(swap_event)
 
-    @staticmethod
-    def _store_swap(swap_event: SwapEvent, tx_hash: str, data: str = ''):
+    @classmethod
+    def _store_swap(cls, swap_event: SwapEvent, tx_hash: str, data: str = ''):
         # TODO should we do something better than just this assertion?
         assert swap_event.direction == SwapDirection.FromSecretNetwork
 
@@ -173,7 +173,7 @@ class EgressLeader(Entity):
             src_tx_hash=swap_event.id,
             src_coin=swap_event.src_coin_address,
             dst_coin=swap_event.dst_coin_address,
-            dst_network="Ethereum",
+            dst_network=cls.native_network().name,
             dst_address=swap_event.recipient,
             dst_tx_hash=tx_hash,
             unsigned_tx=data,
@@ -186,8 +186,8 @@ class EgressLeader(Entity):
             pass
         return
 
-    @staticmethod
-    def _store_failed_swap(swap_event: SwapEvent, data: str = ''):
+    @classmethod
+    def _store_failed_swap(cls, swap_event: SwapEvent, data: str = ''):
         # TODO should we do something better than just this assertion?
         assert swap_event.direction == SwapDirection.FromSecretNetwork
 
@@ -196,7 +196,7 @@ class EgressLeader(Entity):
             src_tx_hash=swap_event.id,
             src_coin=swap_event.src_coin_address,
             dst_coin=swap_event.dst_coin_address,
-            dst_network="Ethereum",
+            dst_network=cls.native_network().name,
             dst_address=swap_event.recipient,
             unsigned_tx=data,
             amount=str(swap_event.amount),
@@ -222,12 +222,14 @@ class EgressLeader(Entity):
             return
         swap.update(status=Status.SWAP_FAILED)
 
+    @classmethod
     @abstractmethod
-    def native_network(self) -> Network:
+    def native_network(cls) -> Network:
         pass
 
+    @classmethod
     @abstractmethod
-    def native_coin_address(self) -> str:
+    def native_coin_address(cls) -> str:
         pass
 
     @abstractmethod
@@ -259,7 +261,7 @@ class EgressSigner(Entity):
         super().__init__(config)
 
         self._secret_token_map = {}
-        pairs = TokenPair.objects(network=Network.Ethereum)
+        pairs = TokenPair.objects(network=self.native_network())
         for pair in pairs:
             self._secret_token_map[pair.coin_address] = Token(pair.secret_coin_address, pair.secret_coin_name)
 
@@ -278,6 +280,11 @@ class EgressSigner(Entity):
             self.config.scrt_swap_address, secret_coin_address, native_coin_address, coin_name, nonce
         )
         return swap_event
+
+    @classmethod
+    @abstractmethod
+    def native_network(cls) -> Network:
+        pass
 
     @abstractmethod
     def get_new_submissions(self) -> Iterable[Any]:

@@ -1,6 +1,6 @@
 from typing import Iterable, Any, Dict, Tuple
 
-from src.base import EgressSigner, SwapEvent
+from src.base import EgressSigner, SwapEvent, Network
 from src.contracts.ethereum import message
 from src.contracts.ethereum.ethr_contract import broadcast_transaction
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
@@ -37,6 +37,10 @@ class EthEgressSigner(EgressSigner):
             swap_tracker.update(nonce=self.config.eth_start_block)
 
         self._event_tracker.register_event(SUBMISSION, swap_tracker.nonce)
+
+    @classmethod
+    def native_network(cls) -> Network:
+        return Network.Ethereum
 
     def get_new_submissions(self) -> Iterable[Any]:
         for submission_event in self._event_tracker.get_new_events(SUBMISSION):

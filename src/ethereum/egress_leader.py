@@ -31,10 +31,12 @@ class EthEgressLeader(EgressLeader):
         self._signer = signer
         self._event_tracker = EventTracker(multisig_contract, [WITHDRAW, WITHDRAW_FAILURE], config.eth_confirmations)
 
-    def native_network(self) -> Network:
+    @classmethod
+    def native_network(cls) -> Network:
         return Network.Ethereum
 
-    def native_coin_address(self) -> str:
+    @classmethod
+    def native_coin_address(cls) -> str:
         return "native"
 
     def handle_native_swap(self, swap_event: SwapEvent) -> str:
