@@ -69,5 +69,5 @@ class EtherSigner(Thread):
         obj = SwapTrackerObject.get_or_create(src=signer_id(self.account))
         if obj.nonce == -1:
             obj.update(nonce=self.config.eth_start_block)
-
+            return self.config.eth_start_block
         return obj.nonce
