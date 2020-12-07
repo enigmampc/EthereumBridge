@@ -66,10 +66,10 @@ class EthereumContract:
         return send_contract_tx(self.contract, func_name, from_, private_key, gas, gas_price=gas_price, args=args)
 
     def raw_transaction(self, account: str, value: int, data: str = '0x',
-                        gas_price=None, gas_limit=None) -> Transaction:
+                        gas_price: int = None, gas_limit=None) -> Transaction:
         address = to_checksum_address(account)
         nonce = w3.eth.getTransactionCount(address, block_identifier='pending')
-        _gas_price = gas_price * 1e9 if gas_price else estimate_gas_price()
+        _gas_price = int(gas_price * 1e9) if gas_price else estimate_gas_price()
         _gas_limit = gas_limit or GAS_LIMIT_DEFAULT
         tx = Transaction(nonce=nonce,
                          gasprice=_gas_price,

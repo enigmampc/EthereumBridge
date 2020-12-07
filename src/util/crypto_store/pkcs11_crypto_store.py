@@ -7,6 +7,7 @@ from pkcs11.util import ec
 from pkcs11.util.ec import encode_ec_public_key
 
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
+from src.util.web3 import w3
 
 
 class Pkcs11CryptoStore(CryptoManagerBase):
@@ -51,7 +52,7 @@ class Pkcs11CryptoStore(CryptoManagerBase):
 
     @property
     def address(self) -> str:
-        return self._address
+        return w3.toChecksumAddress(self._address)
 
     def sign(self, tx_hash: str) -> Tuple[int, int, int]:
 

@@ -35,7 +35,7 @@ class Oracle:
         prices = await asyncio.gather(*(self._get_gas_price_from_source(source) for source in self.gas_sources))
 
         average = sum(prices) / len(prices)
-        return average
+        return int(average)
 
     def price(self, coin: Coin, currency: Currency) -> float:
         # aiohttp displays an error on windows, but we can ignore it, or switch to
@@ -51,14 +51,14 @@ class Oracle:
         task = asyncio.run(self._gas_price())
         return task
 
-    def x_rate(self, coin_primary: Coin, coin_secondary: Coin):
+    def x_rate(self, coin_primary: Coin, coin_secondary: Coin) -> float:
         try:
             return self.price(coin_primary, Currency.USD) / self.price(coin_secondary, Currency.USD)
         except ZeroDivisionError:
             raise ValueError("Cannot get price for secondary") from None
 
     @staticmethod
-    def calculate_fee(gas: int, gas_price: int, token_decimals: int, xrate: float, amount_sent: int):
+    def calculate_fee(gas: int, gas_price: int, token_decimals: int, xrate: float, amount_sent: int) -> int:
 
         # flat fee:
         #              Gwei         -> ETH -> Token -> Token Decimals
@@ -67,7 +67,7 @@ class Oracle:
         # variable fee tbd
         _ = amount_sent
 
-        return flat_fee
+        return int(flat_fee)
 
 
 BridgeOracle = Oracle()

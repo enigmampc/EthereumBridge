@@ -128,7 +128,7 @@ fn mint_token<S: Storage, A: Api, Q: Querier>(
     let contract_addr = deps.api.human_address(&params.address)?;
     let mint_msg = TokenMsgs::Mint {
         amount,
-        address: address.clone(),
+        recipient: address.clone(),
         padding: None,
     };
 

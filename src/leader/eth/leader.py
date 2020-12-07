@@ -1,6 +1,6 @@
 from subprocess import CalledProcessError
 from threading import Event, Thread
-from typing import List
+from typing import List, Tuple
 
 from mongoengine.errors import NotUniqueError
 from pymongo.errors import DuplicateKeyError
@@ -114,22 +114,23 @@ class EtherLeader(Thread):
     def _validate_fee(amount: int, fee: int):
         return amount > fee
 
-    def _tx_native_params(self, amount, dest_address):
+    def _tx_native_params(self, amount: int, dest_address: str) -> Tuple[bytes, str, int, str, int]:
         if self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
-            fee = gas_price * 1e9 * self.multisig_wallet.SUBMIT_GAS
+            fee = int(gas_price * 1e9 * self.multisig_wallet.SUBMIT_GAS)
+            self.logger.info(f'calculated fee: {fee}')
         else:
             fee = 1
 
         tx_dest = dest_address
         # use address(0) for native ethereum swaps
         tx_token = '0x0000000000000000000000000000000000000000'
-        tx_amount = amount - fee
+        tx_amount = int(amount - fee)
         data = b''
-
+        # self.logger.info(f'{tx_dest}, {tx_amount}, {tx_token}, {fee}')
         return data, tx_dest, tx_amount, tx_token, fee
 
-    def _tx_erc20_params(self, amount, dest_address, dst_token: str):
+    def _tx_erc20_params(self, amount, dest_address, dst_token: str) -> Tuple[bytes, str, int, str, int]:
         if self.config.network == "mainnet":
             decimals = Erc20Info.decimals(dst_token.lower())
             x_rate = BridgeOracle.x_rate(Coin.Ethereum, Erc20Info.coin(dst_token.lower()))
@@ -212,6 +213,7 @@ class EtherLeader(Thread):
     def _broadcast_transaction(self, msg: message.Submit):
         if self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
+            self.logger.info(f'Current {gas_price=}Gwei')
         else:
             gas_price = None
 
