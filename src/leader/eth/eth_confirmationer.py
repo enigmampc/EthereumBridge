@@ -50,7 +50,7 @@ class EthConfirmer:
     def _set_tx_result(self, nonce, token, success=True):
         try:
             swap = self.get_swap(nonce, token)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             self.logger.error(
                 f'Error handling swap {build_hash(nonce, token)}: {e}')
             return

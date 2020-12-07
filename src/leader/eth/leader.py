@@ -129,16 +129,17 @@ class EtherLeader(Thread):
 
         return data, tx_dest, tx_amount, tx_token, fee
 
-    def _tx_erc20_params(self, amount, dest_address, dst_token):
+    def _tx_erc20_params(self, amount, dest_address, dst_token: str):
         if self.config.network == "mainnet":
-            decimals = Erc20Info.decimals(dst_token)
-            x_rate = BridgeOracle.x_rate(Coin.Ethereum, Erc20Info.coin(dst_token))
+            decimals = Erc20Info.decimals(dst_token.lower())
+            x_rate = BridgeOracle.x_rate(Coin.Ethereum, Erc20Info.coin(dst_token.lower()))
             gas_price = BridgeOracle.gas_price()
             fee = BridgeOracle.calculate_fee(self.multisig_wallet.SUBMIT_GAS,
                                              gas_price,
                                              decimals,
                                              x_rate,
                                              amount)
+            self.logger.info(f'Fee taken: {fee}')
         # for testing mostly
         else:
             fee = 1
