@@ -18,7 +18,10 @@ class Oracle:
 
     @staticmethod
     async def _get_price_from_source(source: PriceSourceBase, coin: Coin, currency: Currency) -> float:
-        return await source.price(coin, currency)
+        try:
+            return await source.price(coin, currency)
+        except Exception:  # pylint: disable=broad-except
+            return 0
 
     @staticmethod
     async def _get_gas_price_from_source(source: GasSourceBase) -> int:
@@ -28,7 +31,12 @@ class Oracle:
         prices = await asyncio.gather(*(self._get_price_from_source(source, coin, currency)
                                         for source in self.price_sources if coin in source.supported_tokens()))
 
-        average = sum(prices) / len(prices)
+        filtered = list(filter(lambda p: p, prices))
+
+        if not len(filtered):
+            raise ValueError(f"Failed to get prices for coin: {coin}")
+
+        average = sum(filtered) / len(filtered)
         return average
 
     async def _gas_price(self) -> int:
@@ -61,8 +69,8 @@ class Oracle:
     def calculate_fee(gas: int, gas_price: int, token_decimals: int, xrate: float, amount_sent: int) -> int:
 
         # flat fee:
-        #              Gwei         -> ETH -> Token -> Token Decimals
-        flat_fee = (float(gas_price) / 1e9) / xrate * pow(10, token_decimals) * gas
+        #            gas price Gwei ->   Token      -> Token dust          -> total
+        flat_fee = float(gas_price) * (xrate / 1e9) * pow(10, token_decimals) * gas
 
         # variable fee tbd
         _ = amount_sent

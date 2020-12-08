@@ -13,12 +13,15 @@ from src.util.common import project_base_path
 from src.util.config import config
 
 
-def web3_provider(address_: str) -> Web3:
-    if address_.startswith('http'):  # HTTP
-        return Web3(Web3.HTTPProvider(address_))
-    if address_.startswith('ws'):  # WebSocket
-        return Web3(Web3.WebsocketProvider(address_))
-    return Web3(Web3.IPCProvider(address_))
+def web3_provider(address: str) -> Web3:
+    try:
+        if address.startswith('http'):  # HTTP
+            return Web3(Web3.HTTPProvider(address))
+        if address.startswith('ws'):  # WebSocket
+            return Web3(Web3.WebsocketProvider(address))
+        return Web3(Web3.IPCProvider(address))
+    except FileNotFoundError:
+        raise ValueError(f"Failed to initialize web3 provider (is eth_node set?)")
 
 
 w3: Web3 = web3_provider(config.eth_node)

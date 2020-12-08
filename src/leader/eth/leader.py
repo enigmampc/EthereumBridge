@@ -134,6 +134,7 @@ class EtherLeader(Thread):
         if self.config.network == "mainnet":
             decimals = Erc20Info.decimals(dst_token.lower())
             x_rate = BridgeOracle.x_rate(Coin.Ethereum, Erc20Info.coin(dst_token.lower()))
+            self.logger.info(f'Calculated exchange rate: {x_rate=}')
             gas_price = BridgeOracle.gas_price()
             fee = BridgeOracle.calculate_fee(self.multisig_wallet.SUBMIT_GAS,
                                              gas_price,
@@ -185,7 +186,7 @@ class EtherLeader(Thread):
                              tx_token,
                              fee,
                              data)
-        # todo: check we have enough ETH
+
         swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
                     dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
                     status=Status.SWAP_FAILED)
@@ -208,7 +209,8 @@ class EtherLeader(Thread):
         self.logger.info(f'ETH leader remaining funds: {w3.fromWei(remaining_funds, "ether")} ETH')
         fund_warning_threshold = self.config.eth_funds_warning_threshold
         if remaining_funds < w3.toWei(fund_warning_threshold, 'ether'):
-            self.logger.warning(f'ETH leader {self.signer.address} has less than {fund_warning_threshold} ETH left')
+            self.logger.warning(f'ETH leader {self.signer.address} has less than {fund_warning_threshold} ETH left - '
+                                f'{remaining_funds}')
 
     def _broadcast_transaction(self, msg: message.Submit):
         if self.config.network == "mainnet":
