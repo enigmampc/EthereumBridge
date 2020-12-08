@@ -21,7 +21,7 @@ services:
       - secret_node="tcp://bootstrap.secrettestnet.io:26657"
       
       # scrt keys config
-      - secret_key_name=t1
+      - secret_key_name=<choose a name>
       - secret_key_file=t1.key
       - secret_key_password=12345678
 
