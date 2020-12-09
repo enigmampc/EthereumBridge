@@ -7,13 +7,14 @@ from src.util.oracle.gas.poa_gas_oracle import POAGasOracle
 from src.util.oracle.gas.zoltu_gas_oracle import ZoltuGasOracle
 from src.util.oracle.price.coingecko import CoinGecko
 from .gas_source_base import GasSourceBase
+from .price.binance_price import BinancePriceOracle
 from .price.compound_price import CompoundPriceOracle
 from .price_source_base import PriceSourceBase
 from ..coins import Currency, Coin
 
 
 class Oracle:
-    price_sources: List[PriceSourceBase] = [CoinGecko(), CompoundPriceOracle()]
+    price_sources: List[PriceSourceBase] = [CoinGecko(), CompoundPriceOracle(), BinancePriceOracle()]
     gas_sources: List[GasSourceBase] = [EtherchainGasOracle(), EthGasStation(), ZoltuGasOracle(), POAGasOracle()]
 
     @staticmethod
