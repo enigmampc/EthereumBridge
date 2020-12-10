@@ -3,16 +3,16 @@ from typing import List
 from web3.exceptions import TransactionNotFound
 from web3.contract import LogReceipt
 
-from src.base import EgressLeader, SwapEvent, SwapFailed, Network, get_tx_hash
-from src.contracts.ethereum import message
-from src.contracts.ethereum.ethr_contract import broadcast_transaction
-from src.contracts.ethereum.event_listener import EventTracker
-from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.util.oracle.coins import Coin
-from src.util.config import Config
-from src.util.crypto_store.crypto_manager import CryptoManagerBase
-from src.util.oracle.oracle import BridgeOracle
-from src.util.web3 import erc20_contract, w3
+from ..base import EgressLeader, SwapEvent, SwapFailed, Network, get_tx_hash
+from ..contracts.ethereum import message
+from ..contracts.ethereum.ethr_contract import broadcast_transaction
+from ..contracts.ethereum.event_listener import EventTracker
+from ..contracts.ethereum.multisig_wallet import MultisigWallet
+from ..util.oracle.coins import Coin
+from ..util.config import Config
+from ..util.crypto_store.crypto_manager import CryptoManagerBase
+from ..util.oracle.oracle import BridgeOracle
+from ..util.web3 import erc20_contract, w3
 
 WITHDRAW = 'Withdraw'
 WITHDRAW_FAILURE = 'WithdrawFailure'

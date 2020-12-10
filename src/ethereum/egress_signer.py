@@ -1,16 +1,16 @@
 from typing import Iterable, Any, Dict, Tuple
 
-from src.base import EgressSigner, SwapEvent, Network
-from src.contracts.ethereum import message
-from src.contracts.ethereum.ethr_contract import broadcast_transaction
-from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.contracts.ethereum.event_listener import EventTracker
-from src.db import SwapTrackerObject
-from src.signer.eth.impl import signer_id
-from src.util.config import Config
-from src.util.crypto_store.crypto_manager import CryptoManagerBase
-from src.util.oracle.oracle import BridgeOracle
-from src.util.web3 import erc20_contract, w3
+from ..base import EgressSigner, SwapEvent, Network
+from ..contracts.ethereum import message
+from ..contracts.ethereum.ethr_contract import broadcast_transaction
+from ..contracts.ethereum.multisig_wallet import MultisigWallet
+from ..contracts.ethereum.event_listener import EventTracker
+from ..db import SwapTrackerObject
+from ..signer.eth.impl import signer_id
+from ..util.config import Config
+from ..util.crypto_store.crypto_manager import CryptoManagerBase
+from ..util.oracle.oracle import BridgeOracle
+from ..util.web3 import erc20_contract, w3
 
 
 SUBMISSION = 'Submission'

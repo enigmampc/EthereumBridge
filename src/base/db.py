@@ -1,6 +1,6 @@
 from mongoengine import Document, StringField, IntField
 
-from src.db import EnumField
+from ..db import EnumField
 
 from .common import Network
 

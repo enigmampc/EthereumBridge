@@ -6,15 +6,15 @@ import threading
 from pymongo.errors import DuplicateKeyError
 from mongoengine.errors import NotUniqueError
 
-from src.db import Swap, Status, SwapTrackerObject
-from src.util.common import Token
-from src.util.config import Config
-from src.util.logger import get_logger
-from src.util.secretcli import query_scrt_swap
+from ..contracts.secret.secret_contract import swap_query_res
+from ..db import Swap, Status, SwapTrackerObject
+from ..util.common import Token
+from ..util.config import Config
+from ..util.logger import get_logger
+from ..util.secretcli import query_scrt_swap
 
 from .common import Network, SwapEvent, SwapDirection
 from .db import TokenPair
-from ..contracts.secret.secret_contract import swap_query_res
 
 
 class SwapFailed(Exception):
