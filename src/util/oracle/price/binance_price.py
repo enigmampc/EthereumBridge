@@ -30,7 +30,7 @@ class BinancePriceOracle(PriceSourceBase):
     async def price(self, coin: Coin, currency: Currency) -> float:
         url = self._base_url()
         try:
-            coin_str = self._coin_to_str(coin)
+            self._coin_to_str(coin)
             if currency != Currency.USD:
                 raise IndexError
         except IndexError as e:
