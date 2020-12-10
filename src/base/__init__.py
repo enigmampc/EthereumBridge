@@ -73,9 +73,23 @@ class Entity(ABC):
         self.logger = get_logger(
             db_name=config.db_name,
             loglevel=config.log_level,
-            logger_name=config.logger_name or type(self).__name__
+            logger_name=config.logger_name or type(self).__name__ + self.log_identifier()
         )
+        self._thread = None
         self._stop_event = threading.Event()
+
+    def log_identifier(self) -> str:
+        return ''
+
+    def start_thread(self):
+        thread = threading.Thread(target=self.start, name=self.logger.name)
+        thread.start()
+        self._thread = thread
+
+    def is_alive(self):
+        if self._thread is not None:
+            return self._thread.is_alive()
+        return False
 
     def start(self):
         """Should be run in a separate thread, will run until `stop` is called"""

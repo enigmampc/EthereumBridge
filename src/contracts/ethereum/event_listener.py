@@ -17,27 +17,27 @@ from src.util.web3 import contract_event_in_range, w3
 class EventTracker:
     def __init__(self, contract: EthereumContract, events: List[str] = None, confirmations=0):
         self.contract = contract
-        self.confirmations = confirmations
-        self.events: List[str] = []
-        self.filters: Dict[str, LogFilter] = {}
-        self.pending_events: DefaultDict[str, List[LogReceipt]] = defaultdict(list)
+        self._confirmations = confirmations
+        self._events: List[str] = []
+        self._filters: Dict[str, LogFilter] = {}
+        self._pending_events: DefaultDict[str, List[LogReceipt]] = defaultdict(list)
 
         if events is not None:
             for event_name in events:
                 self.register_event(event_name, "latest")
 
     def register_event(self, event_name: str, from_block: BlockIdentifier):
-        if event_name not in self.events:
-            self.events.append(event_name)
+        if event_name not in self._events:
+            self._events.append(event_name)
 
         event = getattr(self.contract.contract.events, event_name)
         event_filter = event.createFilter(fromBlock=from_block)
-        self.filters[event_name] = event_filter
+        self._filters[event_name] = event_filter
 
     def get_new_events(self, event_name: str) -> List[LogReceipt]:
         current_block_number = w3.eth.blockNumber
-        pending_events = self.pending_events[event_name]
-        new_events = self.filters[event_name].get_new_entries()
+        pending_events = self._pending_events[event_name]
+        new_events = self._filters[event_name].get_new_entries()
 
         ready_events = []
         still_pending_events = []
@@ -48,11 +48,11 @@ class EventTracker:
                 else:
                     still_pending_events.append(event)
 
-        self.pending_events[event_name] = still_pending_events
+        self._pending_events[event_name] = still_pending_events
         return ready_events
 
     def _is_event_confirmed(self, event: LogReceipt, block_number: int):
-        return event.blockNumber > (block_number - self.confirmations)
+        return event.blockNumber > (block_number - self._confirmations)
 
 
 class EthEventListener(EventProvider):

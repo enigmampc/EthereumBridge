@@ -83,6 +83,8 @@ class EthEgressLeader(EgressLeader):
     def _send_currency(
         self, swap_event: SwapEvent, token: str, recipient: str, native_amount: int, fee: int, data: str
     ) -> str:
+        self.logger.info(f"sending currency to {recipient}, amount: {swap_event.amount}, token: {token}, fee: {fee}")
+        self.logger.debug(f"sending currency to {recipient}, amount: {swap_event.amount}, token: {token}, fee: {fee}")
         if swap_event.amount <= fee:
             raise SwapFailed(swap_event, data)
 
@@ -114,7 +116,8 @@ class EthEgressLeader(EgressLeader):
 
         tx_hash = broadcast_transaction(tx)
 
-        self.logger.info(msg=f"Submitted tx: hash: {tx_hash.hex()}, msg: {msg}")
+        self.logger.info(msg=f"Submitted swap: hash: {tx_hash.hex()}")
+        self.logger.debug(msg=f"Submitted swap: hash: {tx_hash.hex()}, msg: {msg}")
         return tx_hash.hex()
 
     def _chcek_remaining_funds(self):

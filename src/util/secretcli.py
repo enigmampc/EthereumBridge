@@ -34,11 +34,23 @@ def multisig_tx(unsigned_tx_path: str, multi_sig_account_name: str, account: int
     return run_secret_cli(cmd)
 
 
-def create_unsigned_tx(secret_contract_addr: str, transaction_data: Dict, chain_id: str, enclave_key: str,
-                       code_hash: str, multisig_acc_addr: str) -> str:
-    cmd = ['secretcli', 'tx', 'compute', 'execute', secret_contract_addr, f"{json.dumps(transaction_data)}",
-           '--generate-only', '--chain-id', f"{chain_id}", '--enclave-key', enclave_key, '--code-hash',
-           code_hash, '--from', multisig_acc_addr, '--gas', '200000']
+def create_unsigned_tx(
+    secret_contract_addr: str,
+    transaction_data: Dict,
+    chain_id: str,
+    enclave_key: str,
+    code_hash: str,
+    multisig_acc_addr: str
+) -> str:
+    cmd = [
+        'secretcli', 'tx', 'compute', 'execute', secret_contract_addr, json.dumps(transaction_data),
+        '--generate-only',
+        '--chain-id', chain_id,
+        '--enclave-key', enclave_key,
+        '--code-hash', code_hash,
+        '--from', multisig_acc_addr,
+        '--gas', '200000'
+    ]
     return run_secret_cli(cmd)
 
 

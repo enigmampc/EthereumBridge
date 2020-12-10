@@ -23,10 +23,11 @@ class EthEgressSigner(EgressSigner):
         signer: CryptoManagerBase,
         config: Config,
     ):
+        self._signer = signer  # needed in `super().__init__` because of `def log_identifier`
+
         super().__init__(config)
 
         self._account = signer.address
-        self._signer = signer
         self._multisig_contract = multisig_contract
         self._event_tracker = EventTracker(multisig_contract, confirmations=config.eth_confirmations)
         self._erc20_interface = erc20_contract()
@@ -37,6 +38,9 @@ class EthEgressSigner(EgressSigner):
             swap_tracker.update(nonce=self.config.eth_start_block)
 
         self._event_tracker.register_event(SUBMISSION, swap_tracker.nonce)
+
+    def log_identifier(self) -> str:
+        return "-" + self._signer.address[2:6]
 
     @classmethod
     def native_network(cls) -> Network:

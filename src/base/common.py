@@ -30,21 +30,3 @@ class SwapEvent:
     amount: int  # in smallest denomination (e.g. wei)
     sender: str  # address in source network
     recipient: str  # address in destination network
-
-
-# is this a good idea? or needed?
-class CoinInfo(ABC):
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        pass
-
-    @property
-    @abstractmethod
-    def decimals(self) -> int:
-        pass
-
-    @property
-    @abstractmethod
-    def address(self) -> str:
-        pass

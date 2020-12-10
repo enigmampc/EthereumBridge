@@ -37,10 +37,12 @@ class MultisigWallet(EthereumContract):
             args=message.args()
         )
 
-    def extract_addr(self, tx_log) -> str:
+    @staticmethod
+    def extract_addr(tx_log) -> str:
         return tx_log.args.recipient.decode()
 
-    def extract_amount(self, tx_log) -> int:
+    @staticmethod
+    def extract_amount(tx_log) -> int:
         return tx_log.args.amount
 
     def verify_destination(self, tx_log) -> bool:
