@@ -12,7 +12,7 @@ pub enum TokenMsgs {
     },
     Mint {
         amount: Uint128,
-        address: HumanAddr,
+        recipient: HumanAddr,
         padding: Option<String>,
     },
     RegisterReceive {

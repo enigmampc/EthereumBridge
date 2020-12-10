@@ -31,7 +31,8 @@ class CompoundPriceOracle(PriceSourceBase):
             raise ValueError(f"Coin or currently not supported: {e}") from IndexError
 
         try:
-            async with aiohttp.ClientSession().get(url, raise_for_status=True) as resp:
+            async with aiohttp.ClientSession() as session:
+                resp = await session.get(url, raise_for_status=True)
                 resp_json = await resp.json()
                 cbase_price = resp_json["coinbase"]["prices"][coin_str]
                 okex_price = resp_json["okex"]["prices"][coin_str]

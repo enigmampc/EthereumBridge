@@ -180,6 +180,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         """
         if self.config.network == "mainnet":
             gas_prices = BridgeOracle.gas_price()
+            self.logger.info(f'Current {gas_prices=}Gwei')
         else:
             gas_prices = None
         msg = message.Confirm(submission_id)

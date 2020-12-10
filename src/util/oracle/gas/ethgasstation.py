@@ -18,8 +18,9 @@ class EthGasStation(GasSourceBase):
         url = self._base_url()
         # this opens a new connection each time. It's possible to restructure with sessions, but then the session needs
         # to live inside an async context, and I don't think it's necessary right now
-        async with aiohttp.ClientSession().get(url, params=self._params(), raise_for_status=True) as resp:
-            resp = await resp.json()
+        async with aiohttp.ClientSession() as session:
+            resp = await session.get(url, params=self._params(), raise_for_status=True)
+            resp_body = await resp.json()
             # To convert the provided values to gwei, divide by 10
             # https://docs.ethgasstation.info/gas-price
-            return int(resp['average'] / 10)
+            return int(resp_body['average'] / 10)

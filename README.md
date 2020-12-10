@@ -3,7 +3,7 @@ This is a quick guide that explains how to setup a bridge between Secret and Eth
 
 ## General
 
-The Ethereum bridge transfers between assets on the Ethereum network (ETH/ERC20) and Secret tokens, specified by the 
+The Ethereum bridge transfers (value, data) between assets on the Ethereum network (ETH/ERC20) and Secret tokens, specified by the 
 SNIP-20 spec. The bridge is bi-directional, so those SNIP-20 assets can then be redeemed for their Ethereum equivalent.
 
 ### Architecture
@@ -17,9 +17,9 @@ On the ETH side, once the amount of signers passes the threshold it is executed 
 need an extra step done by the leader - broadcasting the signed transaction. The difference is due to how multisig is
 implemented on the different networks.
 
-On the SCRT side each pair of assets (e.g. ETH<->secretETH) is managed by are 2 secret contracts. The first is the SNIP-20
-contract itself, which manages the token. This is the contract that a user will interact with to manage his token. That way
-for the user there is no difference between a bridged asset, and any other SNIP-20 asset (secret-secret, for instance) 
+On the SCRT side each pair of assets (e.g. ETH<->secretETH) is managed by 2 secret contracts. The first is the SNIP-20
+contract itself, which manages the token. This is the contract that a user will interact with to manage his token. That way,
+from the user's perspective, there is no difference between a bridged asset, and any other SNIP-20 asset (secret-secret, for instance). 
 
 In the future the bridge may also scale to other networks beyond Ethereum
 

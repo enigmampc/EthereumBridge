@@ -43,13 +43,14 @@ class EthEgressLeader(EgressLeader):
         """This should handle swaps from the secret version of a native coin, back to the native coin"""
         if self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
-            fee = gas_price * 1e9 * self._multisig_contract.SUBMIT_GAS
+            fee = int(gas_price * 1e9 * self._multisig_contract.SUBMIT_GAS)
+            self.logger.debug(f'calculated fee: {fee}')
         else:
             fee = 1
 
         # use address(0) for native ethereum swaps
         token_addr = '0x0000000000000000000000000000000000000000'
-        native_amount = swap_event.amount - fee
+        native_amount = int(swap_event.amount - fee)
         data = ''
 
         return self._send_currency(swap_event, token_addr, swap_event.recipient, native_amount, fee, data)
@@ -64,10 +65,12 @@ class EthEgressLeader(EgressLeader):
         if self.config.network == "mainnet":
             decimals = self._token_map[swap_event.src_coin_address].decimals
             x_rate = BridgeOracle.x_rate(Coin.Ethereum, Coin(swap_event.dst_coin_name))
+            self.logger.info(f'Calculated exchange rate: {x_rate=}')
             gas_price = BridgeOracle.gas_price()
             fee = BridgeOracle.calculate_fee(
                 self._multisig_contract.SUBMIT_GAS, gas_price, decimals, x_rate, swap_event.amount
             )
+            self.logger.info(f'Fee taken: {fee}')
         # for testing mostly
         else:
             fee = 1
@@ -102,6 +105,7 @@ class EthEgressLeader(EgressLeader):
     def _submit_swap(self, msg: message.Submit):
         if self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
+            self.logger.info(f'Current {gas_price=}Gwei')
         else:
             gas_price = None
 
@@ -125,7 +129,8 @@ class EthEgressLeader(EgressLeader):
         self.logger.info(f'ETH leader remaining funds: {w3.fromWei(remaining_funds, "ether")} ETH')
         fund_warning_threshold = self.config.eth_funds_warning_threshold
         if remaining_funds < w3.toWei(fund_warning_threshold, 'ether'):
-            self.logger.warning(f'ETH leader {self._signer.address} has less than {fund_warning_threshold} ETH left')
+            self.logger.warning(f'ETH leader {self._signer.address} has less than {fund_warning_threshold} ETH left - '
+                                f'{remaining_funds}')
 
     def get_completed_swap_ids(self) -> List[str]:
         new_events = self._event_tracker.get_new_events(WITHDRAW)

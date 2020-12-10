@@ -1,5 +1,6 @@
 from subprocess import CalledProcessError
 from threading import Event, Thread
+from typing import Tuple
 
 from mongoengine.errors import NotUniqueError
 from pymongo.errors import DuplicateKeyError
@@ -115,27 +116,30 @@ class EtherLeader(Thread):
     def _validate_fee(amount: int, fee: int):
         return amount > fee
 
-    def _tx_native_params(self, amount, dest_address):
+    def _tx_native_params(self, amount: int, dest_address: str) -> Tuple[bytes, str, int, str, int]:
         if self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
-            fee = gas_price * 1e9 * self.multisig_wallet.SUBMIT_GAS
+            fee = int(gas_price * 1e9 * self.multisig_wallet.SUBMIT_GAS)
+            self.logger.info(f'calculated fee: {fee}')
         else:
             fee = 1
 
         tx_dest = dest_address
         # use address(0) for native ethereum swaps
         tx_token = '0x0000000000000000000000000000000000000000'
-        tx_amount = amount - fee
+        tx_amount = int(amount - fee)
         data = b''
-
+        # self.logger.info(f'{tx_dest}, {tx_amount}, {tx_token}, {fee}')
         return data, tx_dest, tx_amount, tx_token, fee
 
-    def _tx_erc20_params(self, amount, dest_address, dst_token):
+    def _tx_erc20_params(self, amount, dest_address, dst_token: str) -> Tuple[bytes, str, int, str, int]:
         if self.config.network == "mainnet":
-            decimals = self.secret_token_map[dst_token].decimals
-            x_rate = BridgeOracle.x_rate(Coin.Ethereum, Coin(self.token_name_map[dst_token]))
+            decimals = self.secret_token_map[dst_token.lower()].decimals
+            x_rate = BridgeOracle.x_rate(Coin.Ethereum, Coin(self.token_name_map[dst_token.lower()]))
+            self.logger.info(f'Calculated exchange rate: {x_rate=}')
             gas_price = BridgeOracle.gas_price()
             fee = BridgeOracle.calculate_fee(self.multisig_wallet.SUBMIT_GAS, gas_price, decimals, x_rate, amount)
+            self.logger.info(f'Fee taken: {fee}')
         # for testing mostly
         else:
             fee = 1
@@ -176,7 +180,6 @@ class EtherLeader(Thread):
 
         # if we are swapping token, no ether should be rewarded
         msg = message.Submit(tx_dest, tx_amount, int(swap_json['nonce']), tx_token, fee, data)
-        # todo: check we have enough ETH
         swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
                     dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
                     status=Status.SWAP_FAILED)
@@ -197,11 +200,13 @@ class EtherLeader(Thread):
         self.logger.info(f'ETH leader remaining funds: {w3.fromWei(remaining_funds, "ether")} ETH')
         fund_warning_threshold = self.config.eth_funds_warning_threshold
         if remaining_funds < w3.toWei(fund_warning_threshold, 'ether'):
-            self.logger.warning(f'ETH leader {self.signer.address} has less than {fund_warning_threshold} ETH left')
+            self.logger.warning(f'ETH leader {self.signer.address} has less than {fund_warning_threshold} ETH left - '
+                                f'{remaining_funds}')
 
     def _submit_swap(self, msg: message.Submit):
         if self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
+            self.logger.info(f'Current {gas_price=}Gwei')
         else:
             gas_price = None
 

@@ -11,7 +11,7 @@ from src.contracts.ethereum.ethr_contract import EthereumContract
 from src.contracts.event_provider import EventProvider
 from src.util.config import Config
 from src.util.logger import get_logger
-from src.util.web3 import contract_event_in_range, w3
+from src.util.web3 import w3
 
 
 class EventTracker:
@@ -108,15 +108,18 @@ class EthEventListener(EventProvider):
         self.logger.info("Starting..")
 
         while not self.stop_event.is_set():
-            self.logger.debug(f'Scanning for new events of type {self.events}')
-            for name, event in self.get_new_events():
-                self.logger.info(f"New event found {name}, adding to confirmation handler")
-                self.pending_events.append((name, event))
-            for name, event in self.confirmation_handler():
-                self.logger.info(f"Event {name} passed confirmation limit, executing callback")
-                self.callbacks.trigger(name, event)
-
-            sleep(self.config.sleep_interval)
+            try:
+                self.logger.debug(f'Scanning for new events of type {self.events}')
+                for name, event in self.get_new_events():
+                    self.logger.info(f"New event found {name}, adding to confirmation handler")
+                    self.pending_events.append((name, event))
+                for name, event in self.confirmation_handler():
+                    self.logger.info(f"Event {name} passed confirmation limit, executing callback")
+                    self.callbacks.trigger(name, event)
+            except Exception as e:  # pylint: disable=broad-except
+                self.logger.error(f'Uncaught error: {repr(e)}')
+            finally:
+                sleep(self.config.sleep_interval)
 
     def confirmation_handler(self):
         blockNum = w3.eth.blockNumber
@@ -126,11 +129,6 @@ class EthEventListener(EventProvider):
             if event.blockNumber <= (blockNum - self.confirmations):
                 self.pending_events.remove(item)
                 yield item
-
-    def events_in_range(self, event: str, from_block: int, to_block: int = None):
-        """ Returns a generator that yields all contract events in range"""
-        return contract_event_in_range(self.tracked_contract, event, from_block=from_block,
-                                       to_block=to_block)
 
     def add_events_in_range(self, event_name, from_block: Union[int, str], to_block: int):
         """
