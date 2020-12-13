@@ -123,7 +123,7 @@ class EthEgressSigner(EgressSigner):
         tx = self._multisig_contract.sign_transaction(tx, self._signer)
         tx_hash = broadcast_transaction(tx)
 
-        self.logger.info(msg=f"Signed transaction - signer: {self._account}, signed msg: {msg}, "
+        self.logger.info(f"Signed transaction - signer: {self._account}, signed msg: {msg}, "
                              f"tx hash: {tx_hash.hex()}")
 
         swap = SwapTrackerObject.objects().get(src=signer_id(self._account))

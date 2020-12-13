@@ -192,5 +192,5 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         tx = self.multisig_contract.sign_transaction(tx, self.signer)
         tx_hash = broadcast_transaction(tx)
 
-        self.logger.info(msg=f"Signed transaction - signer: {self.account}, signed msg: {msg}, "
+        self.logger.info(f"Signed transaction - signer: {self.account}, signed msg: {msg}, "
                              f"tx hash: {tx_hash.hex()}")

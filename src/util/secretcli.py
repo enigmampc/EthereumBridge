@@ -21,16 +21,25 @@ def query_encrypted_error(tx_hash: str):
 
 
 def sign_tx(unsigned_tx_path: str, multi_sig_account_addr: str, account_name: str, account: int, sequence: int):
-    cmd = ['secretcli', 'tx', 'sign', unsigned_tx_path, '--signature-only', '--multisig',
-           multi_sig_account_addr, '--from', account_name, '--offline', '--account-number', str(account),
-           '--sequence', str(sequence)]
-
+    cmd = [
+        'secretcli', 'tx', 'sign', unsigned_tx_path,
+        '--signature-only',
+        '--multisig', multi_sig_account_addr,
+        '--from', account_name,
+        '--offline',
+        '--account-number', str(account),
+        '--sequence', str(sequence)
+    ]
     return run_secret_cli(cmd)
 
 
 def multisig_tx(unsigned_tx_path: str, multi_sig_account_name: str, account: int, sequence: int, *signed_tx):
-    cmd = ['secretcli', 'tx', 'multisign', unsigned_tx_path, multi_sig_account_name] + list(signed_tx)
-    cmd += ['--offline', '--account-number', str(account), '--sequence', str(sequence)]
+    cmd = [
+        'secretcli', 'tx', 'multisign', unsigned_tx_path, multi_sig_account_name, *signed_tx,
+        '--offline',
+        '--account-number', str(account),
+        '--sequence', str(sequence)
+    ]
     return run_secret_cli(cmd)
 
 

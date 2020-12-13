@@ -7,12 +7,10 @@ from mongoengine import OperationError
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.db import Swap, Status, Signatures
-from src.util.common import temp_file
+from src.util.common import temp_file, SecretAccount
 from src.util.config import Config
 from src.util.logger import get_logger
 from src.util.secretcli import sign_tx as secretcli_sign, decrypt, account_info
-
-SecretAccount = namedtuple('SecretAccount', ['address', 'name'])
 
 
 class Secret20Signer(Thread):
@@ -147,8 +145,9 @@ class Secret20Signer(Thread):
 
     def _sign_with_secret_cli(self, unsigned_tx: str, sequence: int) -> str:
         with temp_file(unsigned_tx) as unsigned_tx_path:
-            res = secretcli_sign(unsigned_tx_path, self.multisig.address, self.multisig.name,
-                                 self.account_num, sequence)
+            res = secretcli_sign(
+                unsigned_tx_path, self.multisig.address, self.multisig.name, self.account_num, sequence
+            )
 
         return res
 

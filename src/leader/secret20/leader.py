@@ -8,8 +8,7 @@ from mongoengine import OperationError
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.db import Swap, Status, Signatures, TokenPairing
 from src.leader.secret20.manager import SecretManager
-from src.signer.secret20.signer import SecretAccount
-from src.util.common import temp_file, temp_files, Token
+from src.util.common import temp_file, temp_files, Token, SecretAccount
 from src.util.config import Config
 from src.util.logger import get_logger
 from src.util.secretcli import broadcast, multisig_tx, query_data_success, get_uscrt_balance
@@ -54,12 +53,6 @@ class Secret20Leader(Thread):
 
         super().__init__(group=None, name="SecretLeader", target=self.run, **kwargs)
 
-    def _catch_up(self):
-        """ Scans the DB for signed swap tx at startup """
-        # Note: As Collection.objects() call is cached, there shouldn't be collisions with DB signals
-        for tx in Swap.objects(status=Status.SWAP_SIGNED).order_by('sequence'):
-            self._create_and_broadcast(tx)
-
     def stop(self):
         self.logger.info("Stopping")
         self.manager.stop()
@@ -83,12 +76,14 @@ class Secret20Leader(Thread):
 
                 self.logger.info(f"Found tx ready for broadcasting {tx.id}")
                 failed_prev = not self._create_and_broadcast(tx)
+
             failed_prev = False
             for tx in Swap.objects(status=Status.SWAP_SUBMITTED, src_network="Ethereum"):
                 if failed_prev:
                     self.logger.info(f"Previous TX failed, retrying {tx.id}")
                     _set_retry(tx)
                     continue
+
                 failed_prev = not self._broadcast_validation(tx)
 
             self.logger.debug('done scanning for swaps. sleeping..')
@@ -98,8 +93,8 @@ class Secret20Leader(Thread):
         # reacts to signed tx in the DB that are ready to be sent to secret20
         signatures = [signature.signed_tx for signature in Signatures.objects(tx_id=tx.id)]
         if len(signatures) < self.config.signatures_threshold:  # sanity check
-            self.logger.error(msg=f"Tried to sign tx {tx.id}, without enough signatures"
-                                  f" (required: {self.config.signatures_threshold}, have: {len(signatures)})")
+            self.logger.error(f"Tried to sign tx {tx.id}, without enough signatures"
+                              f" (required: {self.config.signatures_threshold}, have: {len(signatures)})")
             return False
 
         try:
@@ -112,7 +107,7 @@ class Secret20Leader(Thread):
             self.logger.info(f"Changed status of tx {tx.id} to submitted")
             return True
         except (RuntimeError, OperationError) as e:
-            self.logger.error(msg=f"Failed to create multisig and broadcast, error: {e}")
+            self.logger.error(f"Failed to create multisig and broadcast, error: {e}")
             tx.status = Status.SWAP_FAILED
             tx.save()
             return False

@@ -31,7 +31,7 @@ def temp_files(data: List[str], logger) -> Generator:
         try:
             manager.__exit__(*sys.exc_info())
         except OSError as e:
-            logger.debug(msg=e)
+            logger.debug(e)
 
 
 # noinspection PyTypeChecker

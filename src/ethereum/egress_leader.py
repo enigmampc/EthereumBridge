@@ -120,8 +120,8 @@ class EthEgressLeader(EgressLeader):
 
         tx_hash = broadcast_transaction(tx)
 
-        self.logger.info(msg=f"Submitted swap: hash: {tx_hash.hex()}")
-        self.logger.debug(msg=f"Submitted swap: hash: {tx_hash.hex()}, msg: {msg}")
+        self.logger.info(f"Submitted swap: hash: {tx_hash.hex()}")
+        self.logger.debug(f"Submitted swap: hash: {tx_hash.hex()}, msg: {msg}")
         return tx_hash.hex()
 
     def _chcek_remaining_funds(self):

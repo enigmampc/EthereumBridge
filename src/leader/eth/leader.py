@@ -221,5 +221,5 @@ class EtherLeader(Thread):
 
         tx_hash = broadcast_transaction(tx)
 
-        self.logger.info(msg=f"Submitted tx: hash: {tx_hash.hex()}, msg: {msg}")
+        self.logger.info(f"Submitted tx: hash: {tx_hash.hex()}, msg: {msg}")
         return tx_hash.hex()

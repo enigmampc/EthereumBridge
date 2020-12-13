@@ -3,7 +3,7 @@ import aiohttp
 from aiohttp.client_exceptions import ClientConnectionError
 from aiohttp.web_exceptions import HTTPError
 
-from src.util.coins import Coin, Currency
+from src.util.oracle.coins import Coin, Currency
 from src.util.oracle.price_source_base import PriceSourceBase
 
 

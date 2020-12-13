@@ -29,3 +29,4 @@ class SwapEvent:
     amount: int  # in smallest denomination (e.g. wei)
     sender: str  # address in source network
     recipient: str  # address in destination network
+    data: str = ''

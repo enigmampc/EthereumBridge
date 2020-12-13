@@ -99,7 +99,9 @@ class MultisigWallet(EthereumContract):
         if event["event"] == "SwapToken":
             token = event.args.tokenAddress
 
-        return block_number, tx_hash, recipient, token
+        amount = str(MultisigWallet.extract_amount(event))
+
+        return block_number, tx_hash, recipient, token, amount
 
     @classmethod
     def tracked_event(cls) -> List[str]:
