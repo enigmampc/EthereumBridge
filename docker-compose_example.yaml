@@ -4,12 +4,12 @@ version: "3"
 services:
   signer:
     hostname: signer
-    image: enigmampc/eth-bridge:0.8.2
+    image: enigmampc/eth-bridge:1.0.0
     volumes:
       - /replace/this/with/keys/path/:/root/keys  # map the path where the file specified by "secret_key_name" exists
     environment:
       # general
-      - SWAP_ENV=TESTNET
+      - SWAP_ENV=MAINNET
 
       # database config
       - db_username=memyselfandI
@@ -17,8 +17,8 @@ services:
       - db_host=url_to_db.com
 
       # access nodes
-      - eth_node="https://ropsten.infura.io/v3/..."
-      - secret_node="tcp://bootstrap.secrettestnet.io:26657"
+      - eth_node="https://mainnet.infura.io/v3/..."
+      - secret_node="tcp://secret-2.node.enigma.co:26657"
       
       # scrt keys config
       - secret_key_name=<choose a name>
