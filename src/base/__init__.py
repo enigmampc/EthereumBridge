@@ -423,9 +423,9 @@ class IngressLeader(Entity):
                 continue
 
             self.logger.info(f"Found tx ready for broadcasting {swap.id}")
-            failed_prev = not self._create_and_broadcast(swap)
+            failed_prev = not self._submit_signed_swap(swap)
 
-    def _create_and_broadcast(self, swap: Swap) -> bool:
+    def _submit_signed_swap(self, swap: Swap) -> bool:
         # reacts to signed tx in the DB that are ready to be sent to secret20
         signatures = [signature.signed_tx for signature in Signatures.objects(tx_id=swap.id)]
         if len(signatures) < self.config.signatures_threshold:  # sanity check
@@ -434,8 +434,8 @@ class IngressLeader(Entity):
             return False
 
         try:
-            signed_tx = self._create_multisig(swap.unsigned_tx, swap.sequence, signatures)
-            scrt_tx_hash = self._broadcast(signed_tx)
+            signed_tx = self._sign_with_multisig(swap.unsigned_tx, swap.sequence, signatures)
+            scrt_tx_hash = self._broadcast_sn_tx(signed_tx)
             self.logger.info(f"Broadcasted {swap.id} successfully - {scrt_tx_hash}")
             swap.status = Status.SWAP_SUBMITTED
             swap.dst_tx_hash = scrt_tx_hash
@@ -448,7 +448,7 @@ class IngressLeader(Entity):
             swap.save()
             return False
 
-    def _create_multisig(self, unsigned_tx: str, sequence: int, signatures: List[str]) -> str:
+    def _sign_with_multisig(self, unsigned_tx: str, sequence: int, signatures: List[str]) -> str:
         """Takes all the signatures of the signers from the db and generates the signed tx with them."""
         # creates temp-files containing the signatures, as the 'multisign' command requires files as input
         with temp_file(unsigned_tx) as unsigned_tx_path:
@@ -464,7 +464,7 @@ class IngressLeader(Entity):
         if remaining_funds < fund_warning_threshold * 1e6:  # 1e6 uSCRT == 1 SCRT
             self.logger.warning(f'SCRT leader has less than {fund_warning_threshold} SCRT left')
 
-    def _broadcast(self, signed_tx: str) -> str:
+    def _broadcast_sn_tx(self, signed_tx: str) -> str:
         self._check_remaining_funds()
 
         # Note: This operation costs Scrt
@@ -476,12 +476,12 @@ class IngressLeader(Entity):
         for swap in Swap.objects(status=Status.SWAP_SUBMITTED):
             if failed_prev:
                 self.logger.info(f"Previous TX failed, retrying {swap.id}")
-                self._set_retry(swap)
+                self._set_swap_retry(swap)
                 continue
 
-            failed_prev = not self._broadcast_validation(swap)
+            failed_prev = not self._validate_submission(swap)
 
-    def _broadcast_validation(self, swap: Swap) -> bool:  # pylint: disable=unused-argument
+    def _validate_submission(self, swap: Swap) -> bool:  # pylint: disable=unused-argument
         """validation of submitted broadcast signed tx
 
         **kwargs needs to be here even if unused, because this function gets passed arguments from mongo internals
@@ -501,7 +501,7 @@ class IngressLeader(Entity):
                 return True
 
             # TX isn't on-chain. We can retry it
-            self._set_retry(swap)
+            self._set_swap_retry(swap)
 
             # update sequence number - just in case we failed because we are out of sync
             self._update_sequence()
@@ -518,7 +518,7 @@ class IngressLeader(Entity):
             return False
 
     @staticmethod
-    def _set_retry(swap: Swap):
+    def _set_swap_retry(swap: Swap):
         swap.update(status=Status.SWAP_RETRY)
 
     def _handle_retry_swaps(self):
