@@ -52,7 +52,7 @@ class EventTracker:
         return ready_events
 
     def _is_event_confirmed(self, event: LogReceipt, block_number: int):
-        return event.blockNumber > (block_number - self._confirmations)
+        return self._confirmations <= block_number - event.blockNumber
 
 
 class EthEventListener(EventProvider):

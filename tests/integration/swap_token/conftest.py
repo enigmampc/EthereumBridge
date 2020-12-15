@@ -15,10 +15,10 @@ from src.base.db import TokenPair
 from src.base.common import Network
 from src.ethereum.egress_leader import EthEgressLeader
 from src.ethereum.egress_signer import EthEgressSigner
+from src.ethereum.ingress_leader import EthIngressLeader
+from src.ethereum.ingress_signer import EthIngressSigner
 from src.contracts.ethereum.erc20 import Erc20
 from src.db import TokenPairing
-from src.leader.secret20 import Secret20Leader
-from src.signer.secret20 import Secret20Signer
 from src.util.common import Token, SecretAccount
 from src.util.config import Config
 from src.util.crypto_store.local_crypto_store import LocalCryptoStore
@@ -201,21 +201,15 @@ def erc20_contract(multisig_wallet, web3_provider, erc20_token):
 
 @fixture(scope="module")
 def scrt_leader(multisig_account: SecretAccount, multisig_wallet, erc20_contract, configuration: Config):
-
-    leader = Secret20Leader(multisig_account, multisig_wallet, src_network="Ethereum", config=configuration)
+    leader = EthIngressLeader(configuration, multisig_account, multisig_wallet)
     yield leader
     leader.stop()
 
 
 @fixture(scope="module")
-def scrt_signers(scrt_accounts, multisig_wallet, configuration) -> List[Secret20Signer]:
-    signers: List[Secret20Signer] = []
-    for account in scrt_accounts:
-        s = Secret20Signer(account, multisig_wallet, configuration)
-        signers.append(s)
-
+def scrt_signers(scrt_accounts, multisig_wallet, configuration) -> List[EthIngressSigner]:
+    signers = [EthIngressSigner(configuration, account, multisig_wallet) for account in scrt_accounts]
     yield signers
-
     for signer in signers:
         signer.stop()
 

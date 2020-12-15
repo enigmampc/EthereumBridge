@@ -43,6 +43,7 @@ class EthIngressLeader(IngressLeader):
     def get_new_swap_events(self) -> Iterable[SwapEvent]:
         for event_name in [SWAP, SWAP_TOKEN]:
             for event in self._event_tracker.get_new_events(event_name):
+                self.logger.info(f"Found new event of type {event.event}: {event}")
                 ret = self._parse_swap_event(event)
                 if ret is None:
                     continue

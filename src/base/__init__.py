@@ -490,7 +490,7 @@ class IngressLeader(Entity):
 
             if res and res["mint_from_ext_chain"]["status"] == "success":
                 swap.update(status=Status.SWAP_CONFIRMED)
-                self.logger.info("Updated status to confirmed")
+                self.logger.info(f"Updated status to CONFIRMED for {swap.src_tx_hash}")
                 return True
 
             # maybe the block took a long time - we wait 60 seconds before we mark it as failed
@@ -541,9 +541,115 @@ class IngressLeader(Entity):
 class IngressSigner(Entity):
     """Signs confirmations of swaps from other networks to the Secret Network"""
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, multisig: SecretAccount):
+        self._multisig = multisig  # needed in `super().__init__` because of `def log_identifier`
+
         super().__init__(config)
 
+        pairs = TokenPair.objects(network=self.native_network())
+        self._token_map = {}
+        for pair in pairs:
+            self._token_map[pair.secret_coin_address] = Token(pair.coin_address, pair.coin_name, pair.decimals)
+
+        self._account_num = secretcli.account_info(self._multisig.address)["value"]["account_number"]
+
+    def log_identifier(self) -> str:
+        return '-' + self._multisig.name
+
     def work(self):
-        """Provided method - uses abstract methods to manage the swap process"""
+        failed = False
+        for swap in Swap.objects(status=Status.SWAP_UNSIGNED):
+            # if there are 2 transactions that depend on each other (sequence number), and the first fails we mark
+            # the next as "retry"
+            if failed:
+                swap.status = Status.SWAP_RETRY
+                continue
+
+            self.logger.info(f"Found new unsigned swap event {swap}")
+            try:
+                self._validate_and_sign(swap)
+                self.logger.info(f"Signed transaction successfully id: {swap.id}")
+            except ValueError as e:
+                self.logger.error(f'Failed to sign transaction: {swap} error: {e}')
+                failed = True
+
+    def _validate_and_sign(self, swap: Swap):
+        """Makes sure that the tx is valid and signs it
+
+        :raises: ValueError
+        """
+        if Signatures.objects(tx_id=swap.id, signer=self._multisig.name).count() != 0:
+            self.logger.debug(f"This signer already signed this transaction. Waiting for other signers... id: {swap.id}")
+            return
+
+        if not self._swap_is_valid(swap):
+            self.logger.error(f"Validation failed. Signer: {self._multisig.name}. Tx id:{swap.id}.")
+            swap.status = Status.SWAP_FAILED
+            swap.save()
+            raise ValueError
+
+        try:
+            signed_tx = self._sign_with_secret_cli(swap.unsigned_tx, swap.sequence)
+        except RuntimeError as e:
+            swap.status = Status.SWAP_FAILED
+            swap.save()
+            raise ValueError from e
+
+        try:
+            self.logger.info(f"saving signature for {swap.id}")
+            Signatures(tx_id=swap.id, signer=self._multisig.name, signed_tx=signed_tx).save()
+        except OperationError as e:
+            self.logger.error(f'Failed to save tx in database: {swap}')
+            raise ValueError from e
+
+    def _swap_is_valid(self, swap: Swap) -> bool:
+        """Check that the data in the `swap.unsigned_tx` matches the tx on the chain"""
+        try:
+            unsigned_tx = json.loads(swap.unsigned_tx)
+            res = secretcli.decrypt(unsigned_tx['value']['msg'][0]['value']['msg'])
+            self.logger.debug(f'Decrypted unsigned tx successfully {res}')
+            json_start_index = res.find('{')
+            json_end_index = res.rfind('}') + 1
+            decrypted_data = json.loads(res[json_start_index:json_end_index])
+
+        except json.JSONDecodeError:
+            self.logger.error(f'Tried to load tx with hash: {swap.src_tx_hash} {swap.id}'
+                              f'but got data as invalid json, or failed to decrypt')
+            return False
+
+        # extract address and value from unsigned transaction
+        try:
+            amount = int(decrypted_data['mint_from_ext_chain']['amount'])
+            address = decrypted_data['mint_from_ext_chain']['address']
+            token = decrypted_data['mint_from_ext_chain']['token']
+            native_token = self._token_map[token].address
+        except KeyError:
+            self.logger.error(f"Failed to validate tx data: {swap}, {decrypted_data}, "
+                              f"failed to get amount or destination address from tx")
+            return False
+
+        return self.verify_transaction(swap.src_tx_hash, address, amount, native_token)
+
+    def _sign_with_secret_cli(self, unsigned_tx: str, sequence: int) -> str:
+        with temp_file(unsigned_tx) as unsigned_tx_path:
+            res = secretcli.sign_tx(
+                unsigned_tx_path, self._multisig.address, self._multisig.name, self._account_num, sequence
+            )
+
+        return res
+
+    @classmethod
+    @abstractmethod
+    def native_network(cls) -> Network:
+        pass
+
+    @abstractmethod
+    def verify_transaction(self, tx_hash: str, recipient: str, amount: int, token: str):
+        """Check if the tx at the `tx_hash` was sent to the `recipient` with `amount` funds.
+
+        `tx_hash` is the identifier of the tx in the network we're integrating with.
+        `recipient` is a Secret Network address
+        `amount` refers to the amount of coin passed
+        `token` is the address of the token on the non-secret network, or "native".
+        """
         pass

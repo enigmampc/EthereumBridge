@@ -64,9 +64,9 @@ def test_1_swap_eth_to_s20(setup, scrt_signers, scrt_leader, web3_provider, conf
 
     secret_token_addr = TokenPair.objects().get(network=Network.Ethereum, coin_name="ETH").secret_coin_address
 
-    scrt_leader.start()
+    scrt_leader.start_thread()
     for signer in scrt_signers:
-        signer.start()
+        signer.start_thread()
 
     fee_collector = multisig_wallet.contract.functions.getFeeCollector().call()
 
@@ -185,8 +185,9 @@ def test_3_confirm_and_finalize_eth_tx(web3_provider, ethr_signers, configuratio
     sleep(configuration.sleep_interval * 5)
     # Validate the tx is confirmed in the smart contract
     last_nonce = SwapTrackerObject.last_processed(secret_token_addr)
-    # ethr_signers[-1].signer.multisig_contract.contract.functions.confirmations(last_nonce,
-    #                                                                            ethr_signers[-1].account).call()
+    # ethr_signers[-1].signer.multisig_contract.contract.functions.confirmations(
+    #     last_nonce, ethr_signers[-1].account
+    # ).call()
 
     assert last_nonce >= 0
 
