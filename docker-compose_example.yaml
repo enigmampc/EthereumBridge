@@ -4,12 +4,12 @@ version: "3"
 services:
   signer:
     hostname: signer
-    image: enigmampc/eth-bridge:0.8.2
+    image: enigmampc/eth-bridge:1.0.0
     volumes:
       - /replace/this/with/keys/path/:/root/keys  # map the path where the file specified by "secret_key_name" exists
     environment:
       # general
-      - SWAP_ENV=TESTNET
+      - SWAP_ENV=MAINNET
 
       # database config
       - db_username=memyselfandI
@@ -17,8 +17,8 @@ services:
       - db_host=url_to_db.com
 
       # access nodes
-      - eth_node="https://ropsten.infura.io/v3/..."
-      - secret_node="tcp://bootstrap.secrettestnet.io:26657"
+      - eth_node="https://mainnet.infura.io/v3/..."
+      - secret_node="tcp://secret-2.node.enigma.co:26657"
       
       # scrt keys config
       - secret_key_name=<choose a name>
@@ -30,11 +30,11 @@ services:
       - eth_address=0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb                     # ethereum account address
 
       # provided by leader
-      - multisig_acc_addr=secret1v9gjeejjzrp80wysulevc9dgq2fn80ahfyrvsy
-      - multisig_wallet_address=0x3375630Eff4AAcBF59195470F60aabC218e808D6
-      - secret_signers=secretpub1addwnpepqfr4h7p7ylhyjuv0fcef22wu28sgdqljhnz9dtrpafhs4hdkn4r9z3w2z2n,secretpub1addwnpepq04yhuxra8kyplmx93tjjth6nt8a0879406f902sgmw7xjqcvdkzx2nmxs9,secretpub1addwnpepqgq27f8qgq6cew6clwg3cwvsg9llpqenk8xwl79wwzapjjt3ztz9ka5zfg6,secretpub1addwnpepq072jrrygc8n6vr79eq2de2qf85t58l3wd0p3cgn7wvfsg4kq7urqau20y4,secretpub1addwnpepqdtrytnaqy8m6qrwv3metetwq9xkyf3pn7acw89wehdaz66ltzfhxp6h029
-      - scrt_swap_address=secret1qdazdmdq65cgrpgmkcqen2u8yg3e9h6eh9ld99
-      - swap_code_hash=9263D9A2026FECC5A99534E84706230AAC6590AA342434A84B7F8A43DFAAF9E3
+      - multisig_acc_addr=secret1jxaeynmne77sa3kh862cvl5sm9seywg7hm8yye
+      - multisig_wallet_address=0xf4B00C937b4ec4Bb5AC051c3c719036c668a31EC
+      - secret_signers=secretpub1addwnpepqtel2nek37ur8fsdrteszj0kzxe0f4fv546yakpmdyxggcj5jr9cqkvllfn,secretpub1addwnpepqf042glaaq8xx3tvsuw9wfn5c2h22usajaxau3upzueqy950x5c3c3tejy8,secretpub1addwnpepqdyjhrdkspdpzwggshdpns6ejflmuvm89j68n6lm9xf942kzwjqr5vpmn0q,secretpub1addwnpepqfa6phqf2ajf4g46g8kqs8879uratkgpay4hd6yksc2shcjgpnvmzy9xvpu,secretpub1addwnpepqv6gr84x4qrhw0r2qekza6ul4t693w3e59wh3gmqzafgywejddeh50upe30
+      - scrt_swap_address=secret1tmm5xxxe0ltg6df3q2d69dq770030a2syydc9u
+      - swap_code_hash=60D4F9B200F68166A9C7BFAEFD86ABDBD413679B5EF4F7276178C70ACC75BB55
 
       # eth key option 2 - pkcs11 module (only softhsm supported currently)
       # volumes: (you may want to map the token storage path to a path inside the container)

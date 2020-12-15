@@ -15,3 +15,4 @@ class TokenPairing(Document):
     decimals = IntField(required=True)
     name = StringField(required=True)
     display_props = DictField(required=False)
+    price = StringField(required=False)
