@@ -400,7 +400,7 @@ class IngressLeader(Entity):
                          f"for {amount} {swap_event.dst_coin_name}")
 
     def _handle_unsigned_swaps(self):
-        for swap in Swap.objects(status=Status.SWAP_UNSIGNED):
+        for swap in Swap.objects(status=Status.SWAP_UNSIGNED, src_network=self.native_network().name):
             self.logger.debug(f"Checking unsigned tx {swap.id}")
             if Signatures.objects(tx_id=swap.id).count() >= self.config.signatures_threshold:
                 self.logger.info(f"Found tx {swap.id} with enough signatures to broadcast")
@@ -412,7 +412,7 @@ class IngressLeader(Entity):
 
     def _handle_signed_swaps(self):
         failed_prev = False
-        for swap in Swap.objects(status=Status.SWAP_SIGNED):
+        for swap in Swap.objects(status=Status.SWAP_SIGNED, src_network=self.native_network().name):
             # if there are 2 transactions that depend on each other (sequence number), and the first fails we mark
             # the next as "retry"
             if failed_prev:
@@ -471,7 +471,7 @@ class IngressLeader(Entity):
 
     def _handle_submitted_swaps(self):
         failed_prev = False
-        for swap in Swap.objects(status=Status.SWAP_SUBMITTED):
+        for swap in Swap.objects(status=Status.SWAP_SUBMITTED, src_network=self.native_network().name):
             if failed_prev:
                 self.logger.info(f"Previous TX failed, retrying {swap.id}")
                 self._set_swap_retry(swap)
@@ -520,7 +520,7 @@ class IngressLeader(Entity):
         swap.update(status=Status.SWAP_RETRY)
 
     def _handle_retry_swaps(self):
-        for swap in Swap.objects(status=Status.SWAP_RETRY):
+        for swap in Swap.objects(status=Status.SWAP_RETRY, src_network=self.native_network().name):
             for signature in Signatures.objects(tx_id=swap.id):
                 signature.delete()
             swap.status = Status.SWAP_UNSIGNED

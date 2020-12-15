@@ -17,13 +17,13 @@ class Status(Enum):
 
 class Swap(Document):
     src_tx_hash = StringField(required=True, unique=True)
-    src_network = StringField(required=True, default='eth')
+    src_network = StringField(required=True)
     src_coin = StringField(required=True, default='')
     amount = StringField(required=True)
     status = EnumField(Status, required=True)
     unsigned_tx = StringField(required=True)
     dst_tx_hash = StringField(required=True, default='')
-    dst_network = StringField(default='secret20')
+    dst_network = StringField(required=True)
     dst_coin = StringField(default='seth')
     dst_address = StringField()
     created_on = DateTimeField(default=datetime.utcnow)
