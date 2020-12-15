@@ -28,8 +28,7 @@ class Secret20Signer(Thread):
         )
         super().__init__(group=None, name=f"SecretSigner-{self.multisig.name}", target=self.run, **kwargs)
         self.setDaemon(True)  # so tests don't hang
-        self.account_num, _ = self._account_details()
-        # signals.post_init.connect(self._tx_signal, sender=ETHSwap)  # TODO: test this with deployed db on machine
+        self.account_num = account_info(self.multisig.address)["value"]["account_number"]
 
     def stop(self):
         self.logger.info("Stopping..")
@@ -93,10 +92,6 @@ class Secret20Signer(Thread):
 
     def _is_valid(self, tx: Swap) -> bool:
         """Assert that the data in the unsigned_tx matches the tx on the chain"""
-        log = self.contract.get_events_by_tx(tx.src_tx_hash)
-        if not log:  # because for some reason event_log can return None???
-            return False
-
         try:
             unsigned_tx = json.loads(tx.unsigned_tx)
 
@@ -118,6 +113,10 @@ class Secret20Signer(Thread):
         except KeyError:
             self.logger.error(f"Failed to validate tx data: {tx}, {decrypted_data}, "
                               f"failed to get amount or destination address from tx")
+            return False
+
+        log = self.contract.get_events_by_tx(tx.src_tx_hash)
+        if not log:  # because for some reason event_log can return None???
             return False
 
         # extract amount from on-chain swap tx
@@ -155,7 +154,3 @@ class Secret20Signer(Thread):
     def _decrypt(unsigned_tx: Dict):
         msg = unsigned_tx['value']['msg'][0]['value']['msg']
         return decrypt(msg)
-
-    def _account_details(self):
-        details = account_info(self.multisig.address)
-        return details["value"]["account_number"], details["value"]["sequence"]

@@ -49,8 +49,6 @@ class EthereumContract:
         """
         _, log = event_log(tx_id, self.tracked_event(), self.provider, self.contract)
 
-        if not log:  # because for some reason event_log can return None???
-            return None
         return log
 
     def send_transaction(self, func_name: str, from_: str, private_key: bytes, gas, gas_price=None, args: Tuple = None):

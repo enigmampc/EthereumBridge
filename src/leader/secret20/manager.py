@@ -132,8 +132,6 @@ class SecretManager(Thread):
 
         try:
             block_number, tx_hash, recipient, token, amount = self.contract.parse_swap_event(event)
-            if token is None:
-                token = 'native'
         except ValueError:
             return
 

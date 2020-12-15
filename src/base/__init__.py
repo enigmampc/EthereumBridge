@@ -282,7 +282,6 @@ class EgressSigner(Entity):
             self._secret_token_map[pair.coin_address] = Token(pair.secret_coin_address, pair.secret_coin_name)
 
     def work(self):
-        """Provided method - uses abstract methods to manage the swap process"""
         for submission in self.get_new_submissions():
             native_coin_address, nonce = self.get_token_and_nonce(submission)
             swap_data = self._get_swap(native_coin_address, nonce)
@@ -345,7 +344,6 @@ class IngressLeader(Entity):
         self._sequence = value["sequence"]
 
     def work(self):
-        """Provided method - uses abstract methods to manage the swap process"""
         for swap_event in self.get_new_swap_events():
             self._handle_new_swap(swap_event)
 
@@ -419,7 +417,7 @@ class IngressLeader(Entity):
             # the next as "retry"
             if failed_prev:
                 self.logger.info(f"Previous TX failed, retrying {swap.id}")
-                self._set_retry(swap)
+                self._set_swap_retry(swap)
                 continue
 
             self.logger.info(f"Found tx ready for broadcasting {swap.id}")
