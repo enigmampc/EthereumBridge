@@ -70,7 +70,7 @@ def test_1_swap_eth_to_s20(setup, scrt_signers, scrt_leader, web3_provider, conf
 
     fee_collector = multisig_wallet.contract.functions.getFeeCollector().call()
 
-    print(f"{fee_collector=}")
+    print(f"fee_collector = {fee_collector=}")
 
     t1_address = get_key_signer("t1", Path.joinpath(project_base_path(), configuration.path_to_keys))['address']
     # swap ethr for secret20 token, deliver tokens to address of 'a'
@@ -121,7 +121,7 @@ def test_1_swap_eth_to_s20(setup, scrt_signers, scrt_leader, web3_provider, conf
     balance = f'{{"balance": {{"key": "lol", "address": "{dest}"}} }}'
     res = run(f"secretcli q compute query {secret_token_addr} '{balance}'", shell=True, stdout=PIPE)
 
-    print(f"{res.stdout=}")
+    print(f"balance query returned: {res.stdout=}")
 
     amount = json.loads(res.stdout)["balance"]["amount"]
 
@@ -182,7 +182,9 @@ def test_3_confirm_and_finalize_eth_tx(web3_provider, ethr_signers, configuratio
     sleep(1)
     assert increase_block_number(web3_provider, configuration.eth_confirmations)
 
-    sleep(configuration.sleep_interval * 5)
+    sleep(configuration.sleep_interval + 1)
+    assert increase_block_number(web3_provider, configuration.eth_confirmations)
+    sleep(configuration.sleep_interval * 2)
     # Validate the tx is confirmed in the smart contract
     last_nonce = SwapTrackerObject.last_processed(secret_token_addr)
     # ethr_signers[-1].signer.multisig_contract.contract.functions.confirmations(
@@ -290,7 +292,7 @@ def test_11_swap_erc_to_s20(
     balance = f'{{"balance": {{"key": "lol", "address": "{dest}"}} }}'
     res = run(f"secretcli q compute query {secret_token_addr} '{balance}'", shell=True, stdout=PIPE)
 
-    print(f"{res.stdout=}")
+    print(f"balance query returned: {res.stdout=}")
 
     amount = json.loads(res.stdout)["balance"]["amount"]
 

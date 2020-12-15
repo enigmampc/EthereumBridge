@@ -146,10 +146,12 @@ class EgressLeader(Entity):
 
         completed_swaps = self.get_completed_swap_ids()
         for swap in completed_swaps:
+            self.logger.info(f"marking swap {swap} as complete")
             self._mark_swap_complete(swap)
 
         failed_swaps = self.get_failed_swap_ids()
         for swap in failed_swaps:
+            self.logger.info(f"marking swap {swap} as failed")
             self._mark_swap_failed(swap)
 
     def _get_new_swap_events(self) -> Iterable[SwapEvent]:
