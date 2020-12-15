@@ -137,7 +137,7 @@ class EthEgressLeader(EgressLeader):
         return list(map(self._event_to_swap_id, new_events))
 
     def get_failed_swap_ids(self) -> List[str]:
-        new_events = self._event_tracker.get_new_events(WITHDRAW)
+        new_events = self._event_tracker.get_new_events(WITHDRAW_FAILURE)
         return list(map(self._event_to_swap_id, new_events))
 
     def _event_to_swap_id(self, event: LogReceipt) -> str:
