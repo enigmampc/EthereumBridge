@@ -88,7 +88,7 @@ class Entity(ABC):
         thread.start()
         self._thread = thread
 
-    def is_alive(self):
+    def is_alive(self) -> bool:
         if self._thread is not None:
             return self._thread.is_alive()
         return False
@@ -202,7 +202,6 @@ class EgressLeader(Entity):
             swap.save()
         except (DuplicateKeyError, NotUniqueError):
             pass
-        return
 
     @classmethod
     def _store_failed_swap(cls, swap_event: SwapEvent, data: str = ''):
@@ -224,21 +223,18 @@ class EgressLeader(Entity):
             swap.save()
         except (DuplicateKeyError, NotUniqueError):
             pass
-        return
 
     @staticmethod
     def _mark_swap_complete(swap_id: str):
         swap = Swap.objects().get(src_tx_hash=swap_id)
-        if swap.status != Status.SWAP_SUBMITTED:
-            return
-        swap.update(status=Status.SWAP_CONFIRMED)
+        if swap.status == Status.SWAP_SUBMITTED:
+            swap.update(status=Status.SWAP_CONFIRMED)
 
     @staticmethod
     def _mark_swap_failed(swap_id: str):
         swap = Swap.objects().get(src_tx_hash=swap_id)
-        if swap.status != Status.SWAP_SUBMITTED:
-            return
-        swap.update(status=Status.SWAP_FAILED)
+        if swap.status == Status.SWAP_SUBMITTED:
+            swap.update(status=Status.SWAP_FAILED)
 
     @classmethod
     @abstractmethod
@@ -283,7 +279,7 @@ class EgressSigner(Entity):
             native_coin_address, nonce = self.get_token_and_nonce(submission)
             swap_data = self._get_swap(native_coin_address, nonce)
             if self.verify_submission(submission, swap_data):
-                self.approve(submission)
+                self.approve_submission(submission)
 
     def _get_swap(self, native_coin_address: str, nonce: int) -> SwapEvent:
         secret_coin_address = self._secret_token_map[native_coin_address].address
@@ -312,7 +308,7 @@ class EgressSigner(Entity):
         pass
 
     @abstractmethod
-    def approve(self, submission: Any):
+    def approve_submission(self, submission: Any):
         pass
 
 
@@ -555,7 +551,7 @@ class IngressSigner(Entity):
 
     def work(self):
         failed = False
-        for swap in Swap.objects(status=Status.SWAP_UNSIGNED):
+        for swap in Swap.objects(status=Status.SWAP_UNSIGNED, src_network=self.native_network().name):
             # if there are 2 transactions that depend on each other (sequence number), and the first fails we mark
             # the next as "retry"
             if failed:
@@ -641,7 +637,7 @@ class IngressSigner(Entity):
         pass
 
     @abstractmethod
-    def verify_transaction(self, tx_hash: str, recipient: str, amount: int, token: str):
+    def verify_transaction(self, tx_hash: str, recipient: str, amount: int, token: str) -> bool:
         """Check if the tx at the `tx_hash` was sent to the `recipient` with `amount` funds.
 
         `tx_hash` is the identifier of the tx in the network we're integrating with.

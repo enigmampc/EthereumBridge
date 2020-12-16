@@ -13,7 +13,7 @@ class EthIngressSigner(IngressSigner):
     def native_network(cls) -> Network:
         return Network.Ethereum
 
-    def verify_transaction(self, tx_hash: str, recipient: str, amount: int, token: str):
+    def verify_transaction(self, tx_hash: str, recipient: str, amount: int, token: str) -> bool:
         log = self._contract.get_events_by_tx(tx_hash)
         if not log:  # because for some reason event_log can return None???
             return False

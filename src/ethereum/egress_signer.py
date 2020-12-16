@@ -105,7 +105,7 @@ class EthEgressSigner(EgressSigner):
         self.logger.info('Validated successfully')
         return True
 
-    def approve(self, submission: Any):
+    def approve_submission(self, submission: Any):
         """
         Sign the transaction with the signer's private key and then broadcast
         Note: This operation costs gas
