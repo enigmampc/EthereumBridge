@@ -21,7 +21,7 @@ def web3_provider(address: str) -> Web3:
             return Web3(Web3.WebsocketProvider(address))
         return Web3(Web3.IPCProvider(address))
     except FileNotFoundError:
-        raise ValueError(f"Failed to initialize web3 provider (is eth_node set?)")
+        raise ValueError("Failed to initialize web3 provider (is eth_node set?)")
 
 
 w3: Web3 = web3_provider(config.eth_node)
@@ -41,8 +41,9 @@ def extract_tx_by_address(address, block: BlockData) -> list:
     return [tx for tx in block.transactions if tx.to and address.lower() == tx.to.lower()]
 
 
-def event_log(tx_hash: str, events: List[str], provider: Web3, contract: Web3Contract) -> \
-        Tuple[str, Optional[AttributeDict]]:
+def event_log(
+    tx_hash: str, events: List[str], provider: Web3, contract: Web3Contract
+) -> Tuple[str, Optional[AttributeDict]]:
     """
     Extracts logs of @event from tx_hash if present
     :param tx_hash:
@@ -69,8 +70,9 @@ def normalize_address(address: str):
     return Web3.toChecksumAddress(address.lower())
 
 
-def contract_event_in_range(contract, event_name: str, from_block: int = 0,
-                            to_block: Optional[int] = None) -> Generator:
+def contract_event_in_range(
+    contract, event_name: str, from_block: int = 0, to_block: Optional[int] = None
+) -> Generator:
     """
     scans the blockchain, and yields blocks that has contract tx with the provided event
 
@@ -116,24 +118,30 @@ def estimate_gas_price():
     return w3.eth.gasPrice
 
 
-def send_contract_tx(contract: Web3Contract, function_name: str, from_acc: str, private_key: bytes,
-                     gas: int = 0, gas_price: int = 0, value: int = 0, args: Tuple = ()):
+def send_contract_tx(
+    contract: Web3Contract,
+    function_name: str,
+    from_acc: str,
+    private_key: bytes,
+    gas: int = 0,
+    gas_price: int = 0,
+    value: int = 0,
+    args: Tuple = ()
+):
     """
     Creates the contract tx and signs it with private_key to be transmitted as raw tx
 
     """
 
-    tx = getattr(contract.functions, function_name)(*args). \
-        buildTransaction(
-        {
-            'from': from_acc,
-            'chainId': w3.eth.chainId,
-            # gas_price is in gwei
-            'gasPrice': gas_price * 1e9 if gas_price else estimate_gas_price(),
-            'gas': gas or None,
-            'nonce': w3.eth.getTransactionCount(from_acc, block_identifier='pending'),
-            'value': value
-        })
+    tx = getattr(contract.functions, function_name)(*args).buildTransaction({
+        'from': from_acc,
+        'chainId': w3.eth.chainId,
+        # gas_price is in gwei
+        'gasPrice': gas_price * 1e9 if gas_price else estimate_gas_price(),
+        'gas': gas or None,
+        'nonce': w3.eth.getTransactionCount(from_acc, block_identifier='pending'),
+        'value': value
+    })
     signed_txn = w3.eth.account.sign_transaction(tx, private_key)
     return w3.eth.sendRawTransaction(signed_txn.rawTransaction)
 

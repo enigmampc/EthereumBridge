@@ -3,7 +3,7 @@ import sys
 
 import mongoengine
 
-from src.db.collections.log import Logs
+from src.db import Logs
 
 DB_LOG_LEVEL = logging.ERROR
 

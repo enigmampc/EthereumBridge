@@ -1,6 +1,6 @@
 from typing import Dict
 
-from src.util.coins import Coin, Currency
+from src.util.oracle.coins import Coin, Currency
 
 
 class PriceSourceBase:

@@ -3,8 +3,10 @@ import random
 import string
 import subprocess
 
+from src.base.db import TokenPair
+from src.base.common import Network, NATIVE_COIN_ADDRESS
 from src.db import database
-from src.db.collections.token_map import TokenPairing
+from src.db import TokenPairing
 from src.util.config import config
 from src.util.web3 import web3_provider
 
@@ -89,7 +91,7 @@ def deploy_scrt():
 
     tokens = [{"address": "0x1cB0906955623920c86A3963593a02a405Bb97fC", "name": "True USD", "decimals": 18, "symbol": "TUSD"},
               {"address": "0xF6fF95D53E08c9660dC7820fD5A775484f77183A", "name": "YEENUS", "decimals": 8, "symbol": "YNUS"},
-              {"address": "native", "name": "Ethereum", "decimals": 15, "symbol": "ETH"}]
+              {"address": NATIVE_COIN_ADDRESS, "name": "Ethereum", "decimals": 15, "symbol": "ETH"}]
 
     swap_contract, swap_contract_hash = init_swap_contract(deployer)
     # swap_contract = "secret1u8mgmspdeakpf7u8leq68d5xtkykskwrytevyn"
@@ -109,13 +111,28 @@ def deploy_scrt():
         uri = os.environ.get("db_uri")
         with database(uri):
             try:
-                TokenPairing.objects().get(src_network="Ethereum", src_address=token["address"]).update(dst_address=scrt_token)
+                TokenPairing.objects().get(
+                    src_network="Ethereum", src_address=token["address"],
+                ).update(dst_address=scrt_token)
+                TokenPair.objects().get(
+                    network=Network.Ethereum, coin_address=token["address"],
+                ).update(secret_coin_address=scrt_token)
                 print("Updated DB record")
-            except:
+            except Exception:
                 print("Added new pair to db")
-                TokenPairing(src_network="Ethereum", src_coin=token["name"], src_address=token["address"],
-                             dst_network="Secret", dst_coin=f"secret-{token['name']}", dst_address=scrt_token,
-                             decimals=18, name="Ethereum").save()
+                TokenPairing(
+                    src_network="Ethereum", src_coin=token["name"], src_address=token["address"],
+                    dst_network="Secret", dst_coin=f"secret-{token['name']}", dst_address=scrt_token,
+                    decimals=18, name="Ethereum"
+                ).save()
+                TokenPair(
+                    network=Network.Ethereum,
+                    coin_name=token["name"],
+                    coin_address=token["address"],
+                    secret_coin_name=f"secret-{token['name']}",
+                    secret_coin_address=scrt_token,
+                    decimals=18,
+                ).save()
 
     change_owner(swap_contract, config.multisig_acc_addr)
 
@@ -191,16 +208,25 @@ def init_swap_contract(owner: str) -> (str, str):
 def configure_db():
 
     with database():
-        # TokenPairing(src_network="Ethereum", src_coin="ETH", src_address="native",
+        # TokenPairing(src_network="Ethereum", src_coin="ETH", src_address=NATIVE_COIN_ADDRESS,
         #              dst_network="Secret", dst_coin="secret-ETH", dst_address="secret1nk5c3agzt3ytpkl8csfhf4e3qwleauex9ay69t").save()
-        TokenPairing.objects().get(src_network="Ethereum", dst_address="secret13lj8gqvdfn45d03lfrrl087dje5d6unzus2usv", dst_coin="secret-YEENUS").delete()
+        TokenPairing.objects().get(
+            src_network="Ethereum",
+            dst_address="secret13lj8gqvdfn45d03lfrrl087dje5d6unzus2usv",
+            dst_coin="secret-YEENUS"
+        ).delete()
+        TokenPair.objects().get(
+            network=Network.Ethereum,
+            secret_coin_name="secret-YEENUS",
+            secret_coin_address="secret13lj8gqvdfn45d03lfrrl087dje5d6unzus2usv"
+        ).delete()
         # for obj in obs:
         #     obj.delete()
         #
         # TokenPairing(src_network="Ethereum", src_coin="YEENUS", src_address="0xF6fF95D53E08c9660dC7820fD5A775484f77183A",
         #              dst_network="Secret", dst_coin="secret-NUS", dst_address="secret17nfn68fdkvvplr8s0tu7qkhxfw08j7rwne5sl2").save()
         #
-        # TokenPairing(src_network="Ethereum", src_coin="TUSD", src_address="native",
+        # TokenPairing(src_network="Ethereum", src_coin="TUSD", src_address=NATIVE_COIN_ADDRESS,
         #              dst_network="Secret", dst_coin="secret-TUSD", dst_address="secret1psm5jn08l2ms7sef2pxywr42fa8pay877vpg68").save()
 
 

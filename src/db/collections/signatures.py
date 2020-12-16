@@ -2,7 +2,7 @@ from datetime import datetime
 
 from mongoengine import Document, StringField, ReferenceField, DateTimeField
 
-from src.db.collections.eth_swap import Swap
+from .eth_swap import Swap
 
 
 class Signatures(Document):

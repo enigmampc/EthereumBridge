@@ -7,14 +7,19 @@ from .logger import get_logger
 
 logger = get_logger('config')
 
-global_config_paths = {"LOCAL": "local_config.json",
-                       "TESTNET": "testnet_config.json",
-                       "MAINNET": "mainnet_config.json"}
+global_config_paths = {
+    "LOCAL": "local_config.json",
+    "TEST": "test_config.json",
+    "TESTNET": "testnet_config.json",
+    "MAINNET": "mainnet_config.json",
+}
 
-
-env_defaults = {'LOCAL': './config/local_config.json',
-                'TESTNET': './config/testnet_config.json',
-                'MAINNET': './config/mainnet_config.json'}
+env_defaults = {
+    'LOCAL': './config/local_config.json',
+    'TEST': './config/test_config.json',
+    'TESTNET': './config/testnet_config.json',
+    'MAINNET': './config/mainnet_config.json',
+}
 
 
 __all__ = ['Config', 'config', 'get_config']

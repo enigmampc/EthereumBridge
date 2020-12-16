@@ -2,9 +2,9 @@ from typing import Tuple
 
 import pkcs11
 from Crypto.Hash import keccak
-from ethereum.utils import ecrecover_to_pub
 from pkcs11.util import ec
 from pkcs11.util.ec import encode_ec_public_key
+from ethereum.utils import ecrecover_to_pub
 
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
 from src.util.web3 import w3

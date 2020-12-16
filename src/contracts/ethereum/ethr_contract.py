@@ -49,8 +49,6 @@ class EthereumContract:
         """
         _, log = event_log(tx_id, self.tracked_event(), self.provider, self.contract)
 
-        if not log:  # because for some reason event_log can return None???
-            return None
         return log
 
     def send_transaction(self, func_name: str, from_: str, private_key: bytes, gas, gas_price=None, args: Tuple = None):
@@ -98,12 +96,14 @@ class EthereumContract:
         """
         return self.contract.encodeABI(fn_name=fn_name, args=[*args])
 
+    @staticmethod
     @abstractmethod
-    def extract_addr(self, tx_log: AttributeDict) -> str:
+    def extract_addr(tx_log: AttributeDict) -> str:
         raise NotImplementedError
 
+    @staticmethod
     @abstractmethod
-    def extract_amount(self, tx_log: AttributeDict) -> int:
+    def extract_amount(tx_log: AttributeDict) -> int:
         raise NotImplementedError
 
     @abstractmethod

@@ -7,8 +7,7 @@ from pytest import fixture
 
 import tests as tests_package
 import tests.utils as utils_package
-from src.signer.secret20.signer import SecretAccount
-from src.util.common import module_dir
+from src.util.common import module_dir, SecretAccount
 
 from src.util.config import Config, get_config
 from tests.utils.keys import get_key_multisig_addr

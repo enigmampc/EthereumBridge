@@ -4,9 +4,11 @@ from typing import Dict, List
 from web3 import Web3
 from web3.datastructures import AttributeDict
 
-from src.contracts.ethereum.ethr_contract import EthereumContract
-from src.contracts.ethereum.message import Submit, Confirm
+from src.base.common import NATIVE_COIN_ADDRESS
 from src.util.common import project_base_path
+
+from .ethr_contract import EthereumContract
+from .message import Submit, Confirm
 
 
 class MultisigWallet(EthereumContract):
@@ -37,11 +39,24 @@ class MultisigWallet(EthereumContract):
             args=message.args()
         )
 
-    def extract_addr(self, tx_log) -> str:
+    @staticmethod
+    def extract_addr(tx_log) -> str:
         return tx_log.args.recipient.decode()
 
-    def extract_amount(self, tx_log) -> int:
+    @staticmethod
+    def extract_amount(tx_log) -> int:
         return tx_log.args.amount
+
+    @staticmethod
+    def extract_token(tx_log: AttributeDict):
+        if tx_log.event == 'SwapToken':
+            token_address = tx_log.args.tokenAddress
+        elif tx_log.event == 'Swap':
+            token_address = NATIVE_COIN_ADDRESS
+        else:
+            token_address = None
+
+        return token_address
 
     def verify_destination(self, tx_log) -> bool:
         # returns true if the Ethr was sent to the MultiSigWallet
@@ -89,15 +104,16 @@ class MultisigWallet(EthereumContract):
             raise ValueError(f"Failed to decode transaction hash for block {block_number}: {e}") from None
 
         try:
-            recipient = event.args.recipient.decode()
+            recipient = MultisigWallet.extract_addr(event)
         except (ValueError, AttributeError):
             raise ValueError(f"Failed to decode recipient for block {block_number}, transaction: {tx_hash}") from None
 
-        token = None
-        if event["event"] == "SwapToken":
-            token = event.args.tokenAddress
+        # We use the "or native" part here to cover the case that `event` was neither "swap" nor "SwapToken"
+        token = MultisigWallet.extract_token(event) or NATIVE_COIN_ADDRESS
 
-        return block_number, tx_hash, recipient, token
+        amount = str(MultisigWallet.extract_amount(event))
+
+        return block_number, tx_hash, recipient, token, amount
 
     @classmethod
     def tracked_event(cls) -> List[str]:

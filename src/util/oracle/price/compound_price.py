@@ -3,7 +3,7 @@ import aiohttp
 from aiohttp.client_exceptions import ClientConnectionError
 from aiohttp.web_exceptions import HTTPError
 
-from src.util.coins import Coin, Currency
+from src.util.oracle.coins import Coin, Currency
 from src.util.oracle.price_source_base import PriceSourceBase
 
 
@@ -11,10 +11,12 @@ class CompoundPriceOracle(PriceSourceBase):
 
     API_URL = "https://prices.compound.finance/"
 
-    coin_map = {Coin.Zrx: "ZRX",
-                Coin.Compound: "COMP",
-                Coin.Ethereum: "ETH",
-                Coin.Dai: "DAI"}
+    coin_map = {
+        Coin.Zrx: "ZRX",
+        Coin.Compound: "COMP",
+        Coin.Ethereum: "ETH",
+        Coin.Dai: "DAI"
+    }
 
     currency_map = {Currency.USD: "usd"}
 

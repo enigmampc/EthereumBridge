@@ -4,7 +4,7 @@ import aiohttp
 from aiohttp.client_exceptions import ClientConnectionError
 from aiohttp.web_exceptions import HTTPError
 
-from src.util.coins import Currency, Coin
+from src.util.oracle.coins import Currency, Coin
 from src.util.oracle.price_source_base import PriceSourceBase
 
 
@@ -61,7 +61,7 @@ class CoinGecko(PriceSourceBase):
         async with aiohttp.ClientSession() as session:
             resp = await session.get(url, params=params, raise_for_status=True)
             return await resp.json()
-            
+
     async def price(self, coin: Coin, currency: Currency) -> float:
         try:
             coin_str = self._coin_to_str(coin)

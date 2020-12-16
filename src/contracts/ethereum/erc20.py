@@ -2,7 +2,7 @@ import os
 
 from web3 import Web3
 
-from src.contracts.ethereum.ethr_contract import EthereumContract
+from .ethr_contract import EthereumContract
 from src.util.common import project_base_path, Token
 
 
@@ -17,10 +17,12 @@ class Erc20(EthereumContract):
     def symbol(self):
         return self.token.name
 
-    def extract_addr(self, tx_log) -> str:
+    @staticmethod
+    def extract_addr(tx_log) -> str:
         return tx_log.args.recipient.decode()
 
-    def extract_amount(self, tx_log) -> int:
+    @staticmethod
+    def extract_amount(tx_log) -> int:
         # noinspection PyProtectedMember
         return int(tx_log.args._value)  # pylint: disable=protected-access
 

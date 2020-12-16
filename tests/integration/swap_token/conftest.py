@@ -11,12 +11,14 @@ from typing import List
 from brownie import project, network, accounts
 from pytest import fixture
 
+from src.base.db import TokenPair
+from src.base.common import Network, NATIVE_COIN_ADDRESS
+from src.ethereum.egress_leader import EthEgressLeader
+from src.ethereum.egress_signer import EthEgressSigner
+from src.ethereum.ingress_leader import EthIngressLeader
+from src.ethereum.ingress_signer import EthIngressSigner
 from src.contracts.ethereum.erc20 import Erc20
-from src.db.collections.token_map import TokenPairing
-from src.leader.eth.leader import EtherLeader
-from src.leader.secret20 import Secret20Leader
-from src.signer.eth.signer import EtherSigner
-from src.signer.secret20 import Secret20Signer
+from src.db import TokenPairing
 from src.util.common import Token, SecretAccount
 from src.util.config import Config
 from src.util.crypto_store.local_crypto_store import LocalCryptoStore
@@ -141,7 +143,23 @@ def setup(make_project, db, configuration: Config, erc20_token):
     change_owner(swap_contract, configuration.multisig_acc_addr)
 
     # add token pairings to db
-    TokenPairing(src_network="Ethereum", src_coin="ETH", src_address="native",
+    TokenPair(
+        network=Network.Ethereum,
+        coin_name='ETH',
+        coin_address=NATIVE_COIN_ADDRESS,
+        secret_coin_name='secret-ETH',
+        secret_coin_address=eth_token,
+        decimals=18,
+    ).save()
+    TokenPair(
+        network=Network.Ethereum,
+        coin_name='ERC',
+        coin_address=erc20_token.address,
+        secret_coin_name='secret-ERC',
+        secret_coin_address=erc_token,
+        decimals=18,
+    ).save()
+    TokenPairing(src_network="Ethereum", src_coin="ETH", src_address=NATIVE_COIN_ADDRESS,
                  dst_network="Secret", dst_coin="secret-ETH", dst_address=eth_token, decimals=18, name="ETH").save()
     TokenPairing(src_network="Ethereum", src_coin="ERC", src_address=erc20_token.address,
                  dst_network="Secret", dst_coin="secret-ERC", dst_address=erc_token, decimals=18, name="ERC").save()
@@ -156,11 +174,11 @@ def setup(make_project, db, configuration: Config, erc20_token):
     #
     # configuration["token_map_eth"] = \
     #     {erc20_token.address: Token(sn_swap_erc_addr, 'secret-erc', code_hash=swap_code_hash),
-    #      'native': Token(sn_swap_eth_addr, 'secret-eth', code_hash=swap_code_hash2)}
+    #      NATIVE_COIN_ADDRESS: Token(sn_swap_eth_addr, 'secret-eth', code_hash=swap_code_hash2)}
     #
     # configuration["token_map_scrt"] = \
     #     {sn_swap_erc_addr: Token(erc20_token.address, 'erc'),
-    #      sn_swap_eth_addr: Token('native', 'eth')}
+    #      sn_swap_eth_addr: Token(NATIVE_COIN_ADDRESS, 'eth')}
 
 
 @fixture(scope="module")
@@ -183,21 +201,15 @@ def erc20_contract(multisig_wallet, web3_provider, erc20_token):
 
 @fixture(scope="module")
 def scrt_leader(multisig_account: SecretAccount, multisig_wallet, erc20_contract, configuration: Config):
-
-    leader = Secret20Leader(multisig_account, multisig_wallet, src_network="Ethereum", config=configuration)
+    leader = EthIngressLeader(configuration, multisig_account, multisig_wallet)
     yield leader
     leader.stop()
 
 
 @fixture(scope="module")
-def scrt_signers(scrt_accounts, multisig_wallet, configuration) -> List[Secret20Signer]:
-    signers: List[Secret20Signer] = []
-    for account in scrt_accounts:
-        s = Secret20Signer(account, multisig_wallet, configuration)
-        signers.append(s)
-
+def scrt_signers(scrt_accounts, multisig_wallet, configuration) -> List[EthIngressSigner]:
+    signers = [EthIngressSigner(configuration, account, multisig_wallet) for account in scrt_accounts]
     yield signers
-
     for signer in signers:
         signer.stop()
 
@@ -208,19 +220,16 @@ def ethr_leader(multisig_account, configuration: Config, web3_provider, erc20_to
     configuration.leader_acc_addr = normalize_address(ether_accounts[0].address)
     configuration.eth_start_block = web3_provider.eth.blockNumber
 
-    # token_map = configuration["token_map_scrt"]
-    signer = LocalCryptoStore(private_key=configuration.leader_key,
-                              account=configuration.leader_acc_addr)
-    leader = EtherLeader(multisig_wallet, signer,
-                         dst_network="Secret", config=configuration)
+    signer = LocalCryptoStore(private_key=configuration.leader_key, account=configuration.leader_acc_addr)
+    leader = EthEgressLeader(configuration, signer, multisig_wallet)
 
-    leader.start()
+    leader.start_thread()
     yield leader
     leader.stop()
 
 
 @fixture(scope="module")
-def ethr_signers(multisig_wallet, configuration: Config, ether_accounts, erc20_token) -> List[EtherSigner]:
+def ethr_signers(multisig_wallet, configuration: Config, ether_accounts, erc20_token) -> List[EthEgressSigner]:
     res = []
 
     # token_map = {erc20_token.address: Token(configuration['secret_swap_contract_address'],
@@ -231,7 +240,7 @@ def ethr_signers(multisig_wallet, configuration: Config, ether_accounts, erc20_t
         private_key = acc.key
         address = acc.address
         signer = LocalCryptoStore(private_key=private_key, account=address)
-        res.append(EtherSigner(multisig_wallet, signer, dst_network="Secret", config=configuration))
+        res.append(EthEgressSigner(configuration, signer, multisig_wallet))
 
     yield res
 
