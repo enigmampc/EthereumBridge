@@ -4,9 +4,11 @@ from typing import Dict, List
 from web3 import Web3
 from web3.datastructures import AttributeDict
 
-from src.contracts.ethereum.ethr_contract import EthereumContract
-from src.contracts.ethereum.message import Submit, Confirm
+from src.base.common import NATIVE_COIN_ADDRESS
 from src.util.common import project_base_path
+
+from .ethr_contract import EthereumContract
+from .message import Submit, Confirm
 
 
 class MultisigWallet(EthereumContract):
@@ -50,7 +52,7 @@ class MultisigWallet(EthereumContract):
         if tx_log.event == 'SwapToken':
             token_address = tx_log.args.tokenAddress
         elif tx_log.event == 'Swap':
-            token_address = 'native'
+            token_address = NATIVE_COIN_ADDRESS
         else:
             token_address = None
 
@@ -107,7 +109,7 @@ class MultisigWallet(EthereumContract):
             raise ValueError(f"Failed to decode recipient for block {block_number}, transaction: {tx_hash}") from None
 
         # We use the "or native" part here to cover the case that `event` was neither "swap" nor "SwapToken"
-        token = MultisigWallet.extract_token(event) or 'native'
+        token = MultisigWallet.extract_token(event) or NATIVE_COIN_ADDRESS
 
         amount = str(MultisigWallet.extract_amount(event))
 

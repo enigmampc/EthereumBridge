@@ -2,7 +2,7 @@ import os
 
 from web3 import Web3
 
-from src.contracts.ethereum.ethr_contract import EthereumContract
+from .ethr_contract import EthereumContract
 from src.util.common import project_base_path, Token
 
 

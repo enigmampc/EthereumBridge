@@ -4,6 +4,7 @@ from web3.exceptions import TransactionNotFound
 from web3.contract import LogReceipt
 
 from ..base import EgressLeader, SwapEvent, SwapFailed, Network, get_tx_hash
+from ..base.common import NATIVE_COIN_ADDRESS
 from ..contracts.ethereum import message
 from ..contracts.ethereum.ethr_contract import broadcast_transaction
 from ..contracts.ethereum.event_listener import EventTracker
@@ -34,10 +35,6 @@ class EthEgressLeader(EgressLeader):
     @classmethod
     def native_network(cls) -> Network:
         return Network.Ethereum
-
-    @classmethod
-    def native_coin_address(cls) -> str:
-        return "native"
 
     def handle_native_swap(self, swap_event: SwapEvent) -> str:
         """This should handle swaps from the secret version of a native coin, back to the native coin"""
@@ -148,9 +145,9 @@ class EthEgressLeader(EgressLeader):
         token = data['token']
 
         if token == '0x0000000000000000000000000000000000000000':
-            scrt_token = self._secret_token_map['native'].address
-        else:
-            scrt_token = self._secret_token_map[token].address
+            token = NATIVE_COIN_ADDRESS
+
+        scrt_token = self._secret_token_map[token].address
 
         tx_hash = get_tx_hash(nonce, scrt_token)
         return tx_hash

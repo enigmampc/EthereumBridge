@@ -1,6 +1,7 @@
 from typing import Iterable, Any, Dict, Tuple
 
 from ..base import EgressSigner, SwapEvent, Network
+from ..base.common import NATIVE_COIN_ADDRESS
 from ..contracts.ethereum import message
 from ..contracts.ethereum.ethr_contract import broadcast_transaction
 from ..contracts.ethereum.multisig_wallet import MultisigWallet
@@ -64,7 +65,7 @@ class EthEgressSigner(EgressSigner):
                 submission_data['dest'] = params['recipient']
 
             if submission_data['token'] == '0x0000000000000000000000000000000000000000':
-                submission_data['token'] = 'native'
+                submission_data['token'] = NATIVE_COIN_ADDRESS
 
             yield submission_data
 

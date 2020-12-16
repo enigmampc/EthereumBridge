@@ -15,7 +15,7 @@ from ..util.config import Config
 from ..util.logger import get_logger
 from ..util import secretcli
 
-from .common import Network, SwapEvent, SwapDirection
+from .common import Network, SwapEvent, SwapDirection, NATIVE_COIN_ADDRESS
 from .db import TokenPair
 
 
@@ -176,7 +176,7 @@ class EgressLeader(Entity):
                     self.logger.error(f"Failed to query swap: stdout: {e.stdout} stderr: {e.stderr}")
 
     def _handle_swap(self, swap_event: SwapEvent) -> str:
-        if swap_event.dst_coin_address == self.native_coin_address():
+        if swap_event.dst_coin_address == NATIVE_COIN_ADDRESS:
             return self.handle_native_swap(swap_event)
         else:
             return self.handle_non_native_swap(swap_event)
@@ -243,11 +243,6 @@ class EgressLeader(Entity):
     @classmethod
     @abstractmethod
     def native_network(cls) -> Network:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def native_coin_address(cls) -> str:
         pass
 
     @abstractmethod

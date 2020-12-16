@@ -4,7 +4,7 @@ import string
 import subprocess
 
 from src.base.db import TokenPair
-from src.base.common import Network
+from src.base.common import Network, NATIVE_COIN_ADDRESS
 from src.db import database
 from src.db import TokenPairing
 from src.util.config import config
@@ -91,7 +91,7 @@ def deploy_scrt():
 
     tokens = [{"address": "0x1cB0906955623920c86A3963593a02a405Bb97fC", "name": "True USD", "decimals": 18, "symbol": "TUSD"},
               {"address": "0xF6fF95D53E08c9660dC7820fD5A775484f77183A", "name": "YEENUS", "decimals": 8, "symbol": "YNUS"},
-              {"address": "native", "name": "Ethereum", "decimals": 15, "symbol": "ETH"}]
+              {"address": NATIVE_COIN_ADDRESS, "name": "Ethereum", "decimals": 15, "symbol": "ETH"}]
 
     swap_contract, swap_contract_hash = init_swap_contract(deployer)
     # swap_contract = "secret1u8mgmspdeakpf7u8leq68d5xtkykskwrytevyn"
@@ -208,7 +208,7 @@ def init_swap_contract(owner: str) -> (str, str):
 def configure_db():
 
     with database():
-        # TokenPairing(src_network="Ethereum", src_coin="ETH", src_address="native",
+        # TokenPairing(src_network="Ethereum", src_coin="ETH", src_address=NATIVE_COIN_ADDRESS,
         #              dst_network="Secret", dst_coin="secret-ETH", dst_address="secret1nk5c3agzt3ytpkl8csfhf4e3qwleauex9ay69t").save()
         TokenPairing.objects().get(
             src_network="Ethereum",
@@ -226,7 +226,7 @@ def configure_db():
         # TokenPairing(src_network="Ethereum", src_coin="YEENUS", src_address="0xF6fF95D53E08c9660dC7820fD5A775484f77183A",
         #              dst_network="Secret", dst_coin="secret-NUS", dst_address="secret17nfn68fdkvvplr8s0tu7qkhxfw08j7rwne5sl2").save()
         #
-        # TokenPairing(src_network="Ethereum", src_coin="TUSD", src_address="native",
+        # TokenPairing(src_network="Ethereum", src_coin="TUSD", src_address=NATIVE_COIN_ADDRESS,
         #              dst_network="Secret", dst_coin="secret-TUSD", dst_address="secret1psm5jn08l2ms7sef2pxywr42fa8pay877vpg68").save()
 
 

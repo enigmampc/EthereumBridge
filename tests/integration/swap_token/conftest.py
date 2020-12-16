@@ -12,7 +12,7 @@ from brownie import project, network, accounts
 from pytest import fixture
 
 from src.base.db import TokenPair
-from src.base.common import Network
+from src.base.common import Network, NATIVE_COIN_ADDRESS
 from src.ethereum.egress_leader import EthEgressLeader
 from src.ethereum.egress_signer import EthEgressSigner
 from src.ethereum.ingress_leader import EthIngressLeader
@@ -146,7 +146,7 @@ def setup(make_project, db, configuration: Config, erc20_token):
     TokenPair(
         network=Network.Ethereum,
         coin_name='ETH',
-        coin_address='native',
+        coin_address=NATIVE_COIN_ADDRESS,
         secret_coin_name='secret-ETH',
         secret_coin_address=eth_token,
         decimals=18,
@@ -159,7 +159,7 @@ def setup(make_project, db, configuration: Config, erc20_token):
         secret_coin_address=erc_token,
         decimals=18,
     ).save()
-    TokenPairing(src_network="Ethereum", src_coin="ETH", src_address="native",
+    TokenPairing(src_network="Ethereum", src_coin="ETH", src_address=NATIVE_COIN_ADDRESS,
                  dst_network="Secret", dst_coin="secret-ETH", dst_address=eth_token, decimals=18, name="ETH").save()
     TokenPairing(src_network="Ethereum", src_coin="ERC", src_address=erc20_token.address,
                  dst_network="Secret", dst_coin="secret-ERC", dst_address=erc_token, decimals=18, name="ERC").save()
@@ -174,11 +174,11 @@ def setup(make_project, db, configuration: Config, erc20_token):
     #
     # configuration["token_map_eth"] = \
     #     {erc20_token.address: Token(sn_swap_erc_addr, 'secret-erc', code_hash=swap_code_hash),
-    #      'native': Token(sn_swap_eth_addr, 'secret-eth', code_hash=swap_code_hash2)}
+    #      NATIVE_COIN_ADDRESS: Token(sn_swap_eth_addr, 'secret-eth', code_hash=swap_code_hash2)}
     #
     # configuration["token_map_scrt"] = \
     #     {sn_swap_erc_addr: Token(erc20_token.address, 'erc'),
-    #      sn_swap_eth_addr: Token('native', 'eth')}
+    #      sn_swap_eth_addr: Token(NATIVE_COIN_ADDRESS, 'eth')}
 
 
 @fixture(scope="module")

@@ -7,8 +7,8 @@ from typing import List, Callable, Iterator, Dict, Tuple, Union, DefaultDict
 
 from web3.contract import LogFilter, LogReceipt, BlockIdentifier
 
-from src.contracts.ethereum.ethr_contract import EthereumContract
-from src.contracts.event_provider import EventProvider
+from .ethr_contract import EthereumContract
+from ..event_provider import EventProvider
 from src.util.config import Config
 from src.util.logger import get_logger
 from src.util.web3 import w3
