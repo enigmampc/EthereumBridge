@@ -7,7 +7,6 @@ from ..contracts.ethereum.ethr_contract import broadcast_transaction
 from ..contracts.ethereum.multisig_wallet import MultisigWallet
 from ..contracts.ethereum.event_listener import EventTracker
 from ..db import SwapTrackerObject
-from ..signer.eth.impl import signer_id
 from ..util.config import Config
 from ..util.crypto_store.crypto_manager import CryptoManagerBase
 from ..util.oracle.oracle import BridgeOracle
@@ -15,6 +14,10 @@ from ..util.web3 import erc20_contract, w3
 
 
 SUBMISSION = 'Submission'
+
+
+def signer_id(account):
+    return f'signer-{account}'
 
 
 class EthEgressSigner(EgressSigner):
