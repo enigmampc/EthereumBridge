@@ -20,9 +20,9 @@ SUBMISSION = 'Submission'
 class EthEgressSigner(EgressSigner):
     def __init__(
         self,
-        multisig_contract: MultisigWallet,
-        signer: CryptoManagerBase,
         config: Config,
+        signer: CryptoManagerBase,
+        multisig_contract: MultisigWallet,
     ):
         self._signer = signer  # needed in `super().__init__` because of `def log_identifier`
 

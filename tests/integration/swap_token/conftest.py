@@ -221,7 +221,7 @@ def ethr_leader(multisig_account, configuration: Config, web3_provider, erc20_to
     configuration.eth_start_block = web3_provider.eth.blockNumber
 
     signer = LocalCryptoStore(private_key=configuration.leader_key, account=configuration.leader_acc_addr)
-    leader = EthEgressLeader(multisig_wallet, signer, configuration)
+    leader = EthEgressLeader(configuration, signer, multisig_wallet)
 
     leader.start_thread()
     yield leader
@@ -240,7 +240,7 @@ def ethr_signers(multisig_wallet, configuration: Config, ether_accounts, erc20_t
         private_key = acc.key
         address = acc.address
         signer = LocalCryptoStore(private_key=private_key, account=address)
-        res.append(EthEgressSigner(multisig_wallet, signer, configuration))
+        res.append(EthEgressSigner(configuration, signer, multisig_wallet))
 
     yield res
 

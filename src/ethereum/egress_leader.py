@@ -22,9 +22,9 @@ WITHDRAW_FAILURE = 'WithdrawFailure'
 class EthEgressLeader(EgressLeader):
     def __init__(
         self,
-        multisig_contract: MultisigWallet,
-        signer: CryptoManagerBase,
         config: Config,
+        signer: CryptoManagerBase,
+        multisig_contract: MultisigWallet,
     ):  # pylint: disable=duplicate-code
         super().__init__(config)
         self._multisig_contract = multisig_contract

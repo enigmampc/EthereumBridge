@@ -46,14 +46,14 @@ def run_bridge():  # pylint: disable=too-many-statements
         eth_wallet = MultisigWallet(w3, config.multisig_wallet_address)
         secret_account = SecretAccount(config.multisig_acc_addr, config.secret_key_name)
 
-        eth_signer = EthEgressSigner(eth_wallet, signer, config)
+        eth_signer = EthEgressSigner(config, signer, eth_wallet)
         s20_signer = EthIngressSigner(config, secret_account, eth_wallet)
 
         runners.append(eth_signer)
         runners.append(s20_signer)
 
         if config.mode.lower() == 'leader':
-            eth_leader = EthEgressLeader(eth_wallet, signer, config)
+            eth_leader = EthEgressLeader(config, signer, eth_wallet)
 
             secret_leader = SecretAccount(config.multisig_acc_addr, config.multisig_key_name)
             s20_leader = EthIngressLeader(config, secret_leader, eth_wallet)
