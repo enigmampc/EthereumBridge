@@ -143,6 +143,7 @@ cython_debug/
 /tests/integration/brownie_project/
 /tests/deployment/
 /tests/keys/
+deployment/*.py
 *.der
 secretcli
 **/target

@@ -23,6 +23,7 @@ class Coin(Enum):
     Aave = auto()
     Band = auto()
     Kyber = auto()
+    WrappedBTC = auto()
 
 
 erc20_db = {
@@ -31,7 +32,7 @@ erc20_db = {
         "decimal": 6,
         "coin": Coin.Tether
     },
-    "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359": {
+    "0x6b175474e89094c44da98b954eedeac495271d0f": {
         "symbol": "DAI",
         "decimal": 18,
         "coin": Coin.Dai
@@ -90,6 +91,11 @@ erc20_db = {
         "symbol": "KNC",
         "decimal": 18,
         "coin": Coin.Kyber
+    },
+    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": {
+        "symbol": "WBTC",
+        "decimal": 8,
+        "coin": Coin.WrappedBTC
     }
 }
 

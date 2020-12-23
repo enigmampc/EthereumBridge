@@ -16,7 +16,7 @@ class CoinGecko(PriceSourceBase):
         Coin.Secret: "secret",
         Coin.Ethereum: "ethereum",
         Coin.Tether: "0xdac17f958d2ee523a2206206994597c13d831ec7",
-        Coin.Dai: "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+        Coin.Dai: "0x6b175474e89094c44da98b954eedeac495271d0f",
         Coin.Compound: "0xc00e94cb662c3520282e6f5717214004a7f26888",
         Coin.Uniswap: "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
         Coin.YearnFinance: "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
