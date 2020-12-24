@@ -14,7 +14,6 @@ code_hash = "dynamic update"
 
 # used for erc-20 swap
 mint_token = False
-token_contract_addr = "dynamic update"
 token_abi = "dynamic update"
 
 # user settings

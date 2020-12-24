@@ -131,8 +131,6 @@ def init_swap_contract(configuration: Config, token_addr: str, token_code_hash: 
 
 @fixture(scope="module")
 def setup(make_project, db, configuration: Config, erc20_token):
-    configuration.token_contract_addr = erc20_token.address
-
     eth_token, eth_token_hash = init_token_contract(configuration)
     swap_contract, swap_contract_hash = init_swap_contract(configuration, eth_token, eth_token_hash)
     add_minter(eth_token, swap_contract)

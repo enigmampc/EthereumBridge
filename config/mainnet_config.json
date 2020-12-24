@@ -11,7 +11,6 @@
 "secret_contract_address": "secret1k48x38gdrunurennpemt4ns45cphlvuvg9kfzs",
 "code_hash": "666e3abc202103ae43a5bb4b1e7a9b542ffd69e96eafdbc071dc9a8df8526945",
 "mint_token": false,
-"token_contract_addr": "",
 "leader_acc_addr": "",
 "leader_key": "",
 "provider_address": "",

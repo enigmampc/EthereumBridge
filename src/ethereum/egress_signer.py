@@ -39,7 +39,8 @@ class EthEgressSigner(EgressSigner):
         # This is just used to skip Ethereum blocks that we have already seen
         swap_tracker = SwapTrackerObject.get_or_create(src=signer_id(self._account))
         if swap_tracker.nonce == -1:
-            swap_tracker.update(nonce=self.config.eth_start_block)
+            swap_tracker.nonce = self.config.eth_start_block
+            swap_tracker.save()
 
         self._event_tracker.register_event(SUBMISSION, swap_tracker.nonce)
 
