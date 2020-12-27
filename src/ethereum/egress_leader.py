@@ -84,7 +84,6 @@ class EthEgressLeader(EgressLeader):
         self, swap_event: SwapEvent, token: str, recipient: str, native_amount: int, fee: int, data: str
     ) -> str:
         self.logger.info(f"sending currency to {recipient}, amount: {swap_event.amount}, token: {token}, fee: {fee}")
-        self.logger.debug(f"sending currency to {recipient}, amount: {swap_event.amount}, token: {token}, fee: {fee}")
         if swap_event.amount <= fee:
             raise SwapFailed(swap_event, data)
 

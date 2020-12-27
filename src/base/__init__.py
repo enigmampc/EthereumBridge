@@ -165,6 +165,10 @@ class EgressLeader(Entity):
                 swap_event = get_egress_swap_event(
                     self.config.scrt_swap_address, secret_coin_address, token.address, token.name, next_nonce,
                 )
+                self.logger.info(
+                    f"Found new swap {swap_event.id} to {swap_event.recipient} "
+                    f"for {swap_event.amount} {swap_event.dst_coin_name}"
+                )
                 yield swap_event
 
                 swap_tracker.nonce = next_nonce

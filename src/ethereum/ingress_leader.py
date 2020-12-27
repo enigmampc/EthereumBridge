@@ -41,6 +41,7 @@ class EthIngressLeader(IngressLeader):
         return Network.Ethereum
 
     def get_new_swap_events(self) -> Iterable[SwapEvent]:
+        self.logger.info(f"pending events are: {self._event_tracker._pending_events}")
         for event_name in [SWAP, SWAP_TOKEN]:
             for event in self._event_tracker.get_new_events(event_name):
                 self.logger.info(f"Found new event of type {event.event}: {event}")
