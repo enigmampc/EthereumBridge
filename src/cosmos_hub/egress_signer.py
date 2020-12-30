@@ -1,5 +1,5 @@
 from src.base import EgressSigner
 
 
-class BtcEgressSigner(EgressSigner):
+class CosmosEgressSigner(EgressSigner):
     pass

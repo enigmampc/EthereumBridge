@@ -1,5 +1,5 @@
 from src.base import IngressLeader
 
 
-class BtcIngressLeader(IngressLeader):
+class CosmosIngressLeader(IngressLeader):
     pass

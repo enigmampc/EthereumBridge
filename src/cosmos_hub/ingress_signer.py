@@ -1,5 +1,5 @@
 from src.base import IngressSigner
 
 
-class BtcIngressSigner(IngressSigner):
+class CosmosIngressSigner(IngressSigner):
     pass
