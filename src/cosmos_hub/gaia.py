@@ -162,3 +162,70 @@ class GaiaCli:
     def broadcast_tx(self, signed_tx_path: str):
         # async broadcast mode allows sending more than 1 tx per block
         return self._json_run(['tx', 'broadcast', signed_tx_path, '--broadcast-mode', 'async'])
+
+
+def _main():
+    pass
+    # from pprint import pprint
+    #
+    # from src.util.common import temp_file, temp_files
+    #
+    # cli = GaiaCli('secretcli', 'uscrt')
+
+    # # Create, sign, and send multisig tx:
+    # signer1 = 'secret12q5e0ppulztmd03kyhmpxtutxga6guujh5tzry'
+    # signer2 = 'secret1q9l6rs89kf820re4jccklgvnfqnst5qc4stc0f'
+    # ms = 'secret1j8rt5jwjlsc5hcgnwv5hqfe46e3ma6xjd8fvhm'
+    # recipient = 'secret1xp0peuxa9mjnf9pplmxkxfgy9ks8nvavds78z0'
+    #
+    # ms_details = cli.get_account_details(ms)
+    # ms_account_num = ms_details['value']['account_number']
+    # ms_sequence = ms_details['value']['sequence']
+    #
+    # tx = cli.generate_send_tx(ms, recipient, 1000000)
+    # with temp_file(tx) as tx_path:
+    #     signature1 = cli.create_multisig_signature(tx_path, signer1, ms, ms_account_num, ms_sequence)
+    #     signature2 = cli.create_multisig_signature(tx_path, signer2, ms, ms_account_num, ms_sequence)
+    #     with temp_files([signature1, signature2], None) as signature_paths:
+    #         ms_tx = cli.create_multisig_tx(tx_path, 'kms2', ms_account_num, ms_sequence, signature_paths)
+    #
+    # with temp_file(ms_tx) as tx_path:
+    #     cli.broadcast_tx(tx_path)
+
+    # tx = cli.query_tx('D6D758496B2C5C11CD580D98AD8D03F511F51B7074B793A9EC8AFCF11AD670F9')
+    # pprint(tx)
+
+    # print(cli.get_account_details('secret1et6rzussnvwkvy4dentr4x7mv936y2s099us2d'))
+    # print(cli.get_balance_of('secret1et6rzussnvwkvy4dentr4x7mv936y2s099us2d'))
+
+    # tx = cli.generate_send_tx(
+    #     'cosmos1ag66c0pkzyzz9gkhz7wdmgq5s75x9rr5hksgmc',
+    #     'cosmos1et6rzussnvwkvy4dentr4x7mv936y2s08qgeh3',
+    #     1000000,
+    # )
+    # print(f'the tx is: {tx!r}')
+
+    # txs = cli.query_txs_to('secret1et6rzussnvwkvy4dentr4x7mv936y2s099us2d')
+    #
+    # events = txs[0]['events']
+    # event = next(filter(lambda event: event['type'] == 'transfer', events))
+    # attributes = event['attributes']
+    # attribute = next(filter(lambda attribute: attribute['key'] == 'recipient', attributes))
+    # recipient = attribute['value']
+    #
+    # print(repr(recipient))
+    #
+    # txs = cli.query_txs_from('secret1ag66c0pkzyzz9gkhz7wdmgq5s75x9rr54nypxy')
+    # pprint(txs[0]['events'])
+
+    # txs = cli.query_txs_to_until(
+    #     'secret1et6rzussnvwkvy4dentr4x7mv936y2s099us2d',
+    #     # 'D6D758496B2C5C11CD580D98AD8D03F511F51B7074B793A9EC8AFCF11AD670F9',
+    #     '8632E427EBAC694F0B352D532161D430AD92FC09FE6C6E183167862039D679E7',
+    # )
+    # pprint([tx['txhash'] for tx in txs])
+
+
+# If run with `python -m src.cosmos_hub.gaia`
+if __name__ == '__main__':
+    _main()
