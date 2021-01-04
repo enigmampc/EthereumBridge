@@ -159,13 +159,13 @@ class GaiaCli:
         ])
         return process.stdout
 
-    def broadcast_tx(self, signed_tx_path: str):
+    def broadcast_tx(self, signed_tx_path: str) -> str:
         # async broadcast mode allows sending more than 1 tx per block
-        return self._json_run(['tx', 'broadcast', signed_tx_path, '--broadcast-mode', 'async'])
+        return self._json_run(['tx', 'broadcast', signed_tx_path, '--broadcast-mode', 'async'])['txhash']
 
 
 def _main():
-    pass
+    """Examples"""
     # from pprint import pprint
     #
     # from src.util.common import temp_file, temp_files
@@ -190,7 +190,8 @@ def _main():
     #         ms_tx = cli.create_multisig_tx(tx_path, 'kms2', ms_account_num, ms_sequence, signature_paths)
     #
     # with temp_file(ms_tx) as tx_path:
-    #     cli.broadcast_tx(tx_path)
+    #     tx_hash = cli.broadcast_tx(tx_path)
+    #     print(tx_hash)
 
     # tx = cli.query_tx('D6D758496B2C5C11CD580D98AD8D03F511F51B7074B793A9EC8AFCF11AD670F9')
     # pprint(tx)
