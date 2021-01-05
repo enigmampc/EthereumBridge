@@ -10,8 +10,8 @@ from src.util.common import project_base_path
 
 
 class MultisigWallet(EthereumContract):
-    SUBMIT_GAS = 400000
-    CONFIRM_GAS = 400000
+    SUBMIT_GAS = 500000
+    CONFIRM_GAS = 500000
 
     def __init__(self, provider: Web3, contract_address: str):
         abi_path = os.path.join(project_base_path(), 'src', 'contracts', 'ethereum', 'abi', 'MultiSigSwapWallet.json')

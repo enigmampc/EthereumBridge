@@ -34,3 +34,6 @@ class TokenPairing(Document):
     name = StringField(required=True)
     display_props = DictField(required=False)
     price = StringField(required=False)
+    totalLocked = StringField(required=False)
+    totalLockedNormal = StringField(required=False)
+    totalLockedUSD = StringField(required=False)
