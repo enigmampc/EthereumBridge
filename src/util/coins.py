@@ -26,6 +26,7 @@ class Coin(Enum):
     WrappedBTC = auto()
     BAC = auto()
 
+
 erc20_db = {
     "0xdac17f958d2ee523a2206206994597c13d831ec7": {
         "symbol": "USDT",
@@ -97,7 +98,7 @@ erc20_db = {
         "decimal": 8,
         "coin": Coin.WrappedBTC
     },
-    "0x3449FC1Cd036255BA1EB19d65fF4BA2b8903A69a": {
+    "0x3449fc1cd036255ba1eb19d65ff4ba2b8903a69a": {
         "symbol": "BAC",
         "decimal": 18,
         "coin": Coin.BAC
