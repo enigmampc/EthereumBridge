@@ -24,7 +24,7 @@ class Coin(Enum):
     Band = auto()
     Kyber = auto()
     WrappedBTC = auto()
-
+    BAC = auto()
 
 erc20_db = {
     "0xdac17f958d2ee523a2206206994597c13d831ec7": {
@@ -96,6 +96,11 @@ erc20_db = {
         "symbol": "WBTC",
         "decimal": 8,
         "coin": Coin.WrappedBTC
+    },
+    "0x3449FC1Cd036255BA1EB19d65fF4BA2b8903A69a": {
+        "symbol": "BAC",
+        "decimal": 18,
+        "coin": Coin.BAC
     }
 }
 

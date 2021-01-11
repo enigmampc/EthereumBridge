@@ -26,7 +26,8 @@ class CoinGecko(PriceSourceBase):
         Coin.Maker: "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
         Coin.Synthetix: "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
         Coin.Aave: "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
-        Coin.Kyber: "0xdd974d5c2e2928dea5f71b9825b8b646686bd200"
+        Coin.Kyber: "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+        Coin.BAC: "0x3449FC1Cd036255BA1EB19d65fF4BA2b8903A69a"
     }
 
     currency_map = {Currency.USD: "usd"}
