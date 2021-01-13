@@ -140,9 +140,9 @@ def setup(make_project, db, configuration: Config, erc20_token):
     change_owner(swap_contract, configuration.multisig_acc_addr)
 
     # add token pairings to db
-    TokenPairing(src_network=Network.Ethereum.name, src_coin="ETH", src_address=NATIVE_COIN_ADDRESS,
+    TokenPairing(src_network=Network.Ethereum.value, src_coin="ETH", src_address=NATIVE_COIN_ADDRESS,
                  dst_network="Secret", dst_coin="secret-ETH", dst_address=eth_token, decimals=18, name="ETH").save()
-    TokenPairing(src_network=Network.Ethereum.name, src_coin="ERC", src_address=erc20_token.address,
+    TokenPairing(src_network=Network.Ethereum.value, src_coin="ERC", src_address=erc20_token.address,
                  dst_network="Secret", dst_coin="secret-ERC", dst_address=erc_token, decimals=18, name="ERC").save()
 
     configuration.swap_code_hash = swap_contract_hash

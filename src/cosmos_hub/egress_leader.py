@@ -47,7 +47,7 @@ class CosmosEgressLeader(EgressLeader):
     def get_completed_swap_ids(self) -> List[str]:
         #  "raw_log": "insufficient funds: insufficient account funds; 16800000uscrt \u003c 100000000uscrt:
         #  failed to execute message; message index: 0",
-        for swap in Swap.objects(status=Status.SWAP_SIGNED, dst_network=self.native_network().name):
+        for swap in Swap.objects(status=Status.SWAP_SIGNED, dst_network=self.native_network().value):
             signatures = Signatures.objects(tx_id=swap.src_tx_hash)
             if len(signatures) < self.config.signatures_threshold:
                 self.logger.warning(

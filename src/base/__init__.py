@@ -119,7 +119,7 @@ class EgressLeader(Entity):
     def __init__(self, config: Config):
         super().__init__(config)
 
-        pairs = TokenPairing.objects(src_network=self.native_network().name)
+        pairs = TokenPairing.objects(src_network=self.native_network().value)
         # self.*_token_map lets us easily find the details of tokens
         # in one network using the address of the token in another.
         self._token_name_map = {}
@@ -196,7 +196,7 @@ class EgressLeader(Entity):
             src_tx_hash=swap_event.id,
             src_coin=swap_event.src_coin_address,
             dst_coin=swap_event.dst_coin_address,
-            dst_network=self.native_network().name,
+            dst_network=self.native_network().value,
             dst_address=swap_event.recipient,
             dst_tx_hash=tx_hash,
             unsigned_tx=swap_event.data,
@@ -219,7 +219,7 @@ class EgressLeader(Entity):
             src_tx_hash=swap_event.id,
             src_coin=swap_event.src_coin_address,
             dst_coin=swap_event.dst_coin_address,
-            dst_network=cls.native_network().name,
+            dst_network=cls.native_network().value,
             dst_address=swap_event.recipient,
             unsigned_tx=data,
             amount=str(swap_event.amount),
@@ -287,7 +287,7 @@ class EgressSigner(Entity):
         super().__init__(config)
 
         self._secret_token_map = {}
-        pairs = TokenPairing.objects(src_network=self.native_network().name)
+        pairs = TokenPairing.objects(src_network=self.native_network().value)
         for pair in pairs:
             self._secret_token_map[pair.src_address] = Token(pair.dst_address, pair.dst_coin, pair.decimals)
 
@@ -339,7 +339,7 @@ class IngressLeader(Entity):
         self._multisig = s20_multisig_account
 
         self._secret_token_map = {}
-        pairs = TokenPairing.objects(src_network=self.native_network().name)
+        pairs = TokenPairing.objects(src_network=self.native_network().value)
         for pair in pairs:
             self._secret_token_map[pair.src_address] = Token(pair.dst_address, pair.dst_coin, pair.decimals)
 
@@ -387,7 +387,7 @@ class IngressLeader(Entity):
             return
 
         swap = Swap(
-            src_network=self.native_network().name,
+            src_network=self.native_network().value,
             src_tx_hash=swap_event.id,
             src_coin=swap_event.src_coin_address,
             dst_coin=swap_event.dst_coin_address,
@@ -406,11 +406,11 @@ class IngressLeader(Entity):
             return
 
         self._sequence = self._sequence + 1
-        self.logger.info(f"saved new {self.native_network().name} -> Secret transaction {swap_event.id}, "
+        self.logger.info(f"saved new {self.native_network().value} -> Secret transaction {swap_event.id}, "
                          f"for {amount} {swap_event.dst_coin_name}")
 
     def _handle_unsigned_swaps(self):
-        for swap in Swap.objects(status=Status.SWAP_UNSIGNED, src_network=self.native_network().name):
+        for swap in Swap.objects(status=Status.SWAP_UNSIGNED, src_network=self.native_network().value):
             self.logger.debug(f"Checking unsigned tx {swap.id}")
             if Signatures.objects(tx_id=swap.id).count() >= self.config.signatures_threshold:
                 self.logger.info(f"Found tx {swap.id} with enough signatures to broadcast")
@@ -422,7 +422,7 @@ class IngressLeader(Entity):
 
     def _handle_signed_swaps(self):
         failed_prev = False
-        for swap in Swap.objects(status=Status.SWAP_SIGNED, src_network=self.native_network().name):
+        for swap in Swap.objects(status=Status.SWAP_SIGNED, src_network=self.native_network().value):
             # if there are 2 transactions that depend on each other (sequence number), and the first fails we mark
             # the next as "retry"
             if failed_prev:
@@ -481,7 +481,7 @@ class IngressLeader(Entity):
 
     def _handle_submitted_swaps(self):
         failed_prev = False
-        for swap in Swap.objects(status=Status.SWAP_SUBMITTED, src_network=self.native_network().name):
+        for swap in Swap.objects(status=Status.SWAP_SUBMITTED, src_network=self.native_network().value):
             if failed_prev:
                 self.logger.info(f"Previous TX failed, retrying {swap.id}")
                 self._set_swap_retry(swap)
@@ -530,7 +530,7 @@ class IngressLeader(Entity):
         swap.update(status=Status.SWAP_RETRY)
 
     def _handle_retry_swaps(self):
-        for swap in Swap.objects(status=Status.SWAP_RETRY, src_network=self.native_network().name):
+        for swap in Swap.objects(status=Status.SWAP_RETRY, src_network=self.native_network().value):
             for signature in Signatures.objects(tx_id=swap.id):
                 signature.delete()
             swap.status = Status.SWAP_UNSIGNED
@@ -556,7 +556,7 @@ class IngressSigner(Entity):
 
         super().__init__(config)
 
-        pairs = TokenPairing.objects(src_network=self.native_network().name)
+        pairs = TokenPairing.objects(src_network=self.native_network().value)
         self._token_map = {}
         for pair in pairs:
             self._token_map[pair.dst_address] = Token(pair.src_address, pair.src_coin, pair.decimals)
@@ -568,7 +568,7 @@ class IngressSigner(Entity):
 
     def work(self):
         failed = False
-        for swap in Swap.objects(status=Status.SWAP_UNSIGNED, src_network=self.native_network().name):
+        for swap in Swap.objects(status=Status.SWAP_UNSIGNED, src_network=self.native_network().value):
             # if there are 2 transactions that depend on each other (sequence number), and the first fails we mark
             # the next as "retry"
             if failed:
