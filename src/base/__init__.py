@@ -9,14 +9,13 @@ from mongoengine import OperationError, NotUniqueError
 from pymongo.errors import DuplicateKeyError
 
 from ..contracts.secret import secret_contract
-from ..db import Swap, Status, SwapTrackerObject, Signatures
+from ..db import Swap, Status, SwapTrackerObject, Signatures, TokenPairing
 from ..util.common import Token, SecretAccount, temp_file, temp_files
 from ..util.config import Config
 from ..util.logger import get_logger
 from ..util import secretcli
 
 from .common import Network, SwapEvent, SwapDirection, NATIVE_COIN_ADDRESS
-from .db import TokenPair
 
 
 class SwapFailed(Exception):
@@ -120,17 +119,17 @@ class EgressLeader(Entity):
     def __init__(self, config: Config):
         super().__init__(config)
 
-        pairs = TokenPair.objects(network=self.native_network())
+        pairs = TokenPairing.objects(src_network=self.native_network().name)
         # self.*_token_map lets us easily find the details of tokens
         # in one network using the address of the token in another.
         self._token_name_map = {}
         self._token_map = {}
         self._secret_token_map = {}
         for pair in pairs:
-            self._token_name_map[pair.coin_address] = pair.coin_name
-            self._token_map[pair.secret_coin_address] = Token(pair.coin_address, pair.coin_name, pair.decimals)
-            self._secret_token_map[pair.coin_address] = Token(
-                pair.secret_coin_address, pair.secret_coin_name, pair.decimals
+            self._token_name_map[pair.src_address] = pair.src_coin
+            self._token_map[pair.dst_address] = Token(pair.src_address, pair.src_coin, pair.decimals)
+            self._secret_token_map[pair.src_address] = Token(
+                pair.dst_address, pair.dst_coin, pair.decimals
             )
 
         self._swap_tracker = {sec_addr: SwapTrackerObject.get_or_create(src=sec_addr) for sec_addr in self._token_map}
@@ -288,9 +287,9 @@ class EgressSigner(Entity):
         super().__init__(config)
 
         self._secret_token_map = {}
-        pairs = TokenPair.objects(network=self.native_network())
+        pairs = TokenPairing.objects(src_network=self.native_network().name)
         for pair in pairs:
-            self._secret_token_map[pair.coin_address] = Token(pair.secret_coin_address, pair.secret_coin_name)
+            self._secret_token_map[pair.src_address] = Token(pair.dst_address, pair.dst_coin, pair.decimals)
 
     def work(self):
         for submission in self.get_new_submissions():
@@ -340,9 +339,9 @@ class IngressLeader(Entity):
         self._multisig = s20_multisig_account
 
         self._secret_token_map = {}
-        pairs = TokenPair.objects(network=self.native_network())
+        pairs = TokenPairing.objects(src_network=self.native_network().name)
         for pair in pairs:
-            self._secret_token_map[pair.coin_address] = Token(pair.secret_coin_address, pair.secret_coin_name)
+            self._secret_token_map[pair.src_address] = Token(pair.dst_address, pair.dst_coin, pair.decimals)
 
         self._account_num = 0
         self._sequence = 0
@@ -557,10 +556,10 @@ class IngressSigner(Entity):
 
         super().__init__(config)
 
-        pairs = TokenPair.objects(network=self.native_network())
+        pairs = TokenPairing.objects(src_network=self.native_network().name)
         self._token_map = {}
         for pair in pairs:
-            self._token_map[pair.secret_coin_address] = Token(pair.coin_address, pair.coin_name, pair.decimals)
+            self._token_map[pair.dst_address] = Token(pair.src_address, pair.src_coin, pair.decimals)
 
         self._account_num = secretcli.account_info(self._multisig.address)["value"]["account_number"]
 

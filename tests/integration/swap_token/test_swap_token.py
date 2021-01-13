@@ -7,7 +7,6 @@ from time import sleep
 
 from web3 import Web3
 
-from src.base.db import TokenPair
 from src.base.common import Network
 from src.db import Swap, Status, SwapTrackerObject, Signatures, TokenPairing
 
@@ -61,8 +60,7 @@ def test_fail_swap_token_not_whitelisted(
 
 @_test_header_log
 def test_1_swap_eth_to_s20(setup, scrt_signers, scrt_leader, web3_provider, configuration: Config, multisig_wallet):
-
-    secret_token_addr = TokenPair.objects().get(network=Network.Ethereum, coin_name="ETH").secret_coin_address
+    secret_token_addr = TokenPairing.objects().get(src_network=Network.Ethereum.name, src_coin="ETH").dst_address
 
     scrt_leader.start_thread()
     for signer in scrt_signers:
@@ -134,9 +132,8 @@ def test_1_swap_eth_to_s20(setup, scrt_signers, scrt_leader, web3_provider, conf
 # ethr_signers are here to respond for leader's submission
 @_test_header_log
 def test_2_swap_s20_to_eth(setup, web3_provider, ethr_leader, configuration: Config, ethr_signers, scrt_signers):
-
     swap_contract_addr = configuration.scrt_swap_address
-    secret_token_addr = TokenPair.objects().get(network=Network.Ethereum, coin_name="ETH").secret_coin_address
+    secret_token_addr = TokenPairing.objects().get(src_network=Network.Ethereum.name, src_coin="ETH").dst_address
 
     # start the eth signers
     for signer in ethr_signers[:-1]:
@@ -175,7 +172,7 @@ def test_2_swap_s20_to_eth(setup, web3_provider, ethr_leader, configuration: Con
 @_test_header_log
 def test_3_confirm_and_finalize_eth_tx(web3_provider, ethr_signers, configuration: Config):
     # To allow the new EthrSigner to "catch up", we start it after the event submission event in Ethereum
-    secret_token_addr = TokenPair.objects().get(network=Network.Ethereum, coin_name="ETH").secret_coin_address
+    secret_token_addr = TokenPairing.objects().get(src_network=Network.Ethereum.name, src_coin="ETH").dst_address
     prev_bal = web3_provider.eth.getBalance(zero_address, "latest")
     prev_bal_fee = web3_provider.eth.getBalance(PAYABLE_ADDRESS, "latest")
     ethr_signers[-1].start_thread()
@@ -216,7 +213,7 @@ def test_3_confirm_and_finalize_eth_tx(web3_provider, ethr_signers, configuratio
 def test_11_swap_erc_to_s20(
     scrt_leader, scrt_signers, web3_provider, configuration: Config, erc20_contract, multisig_wallet, ethr_leader
 ):
-    secret_token_addr = TokenPair.objects().get(network=Network.Ethereum, coin_name="ERC").secret_coin_address
+    secret_token_addr = TokenPairing.objects().get(src_network=Network.Ethereum.name, src_coin="ERC").dst_address
 
     # scrt_leader.start()
     # for signer in scrt_signers:
@@ -307,9 +304,8 @@ def test_11_swap_erc_to_s20(
 # ethr_signers are here to respond for leader's submission
 @_test_header_log
 def test_2_swap_s20_to_erc(web3_provider, ethr_leader, configuration: Config, ethr_signers, erc20_contract):
-
     swap_contract_addr = configuration.scrt_swap_address
-    secret_token_addr = TokenPair.objects().get(network=Network.Ethereum, coin_name="ERC").secret_coin_address
+    secret_token_addr = TokenPairing.objects().get(src_network=Network.Ethereum.name, src_coin="ERC").dst_address
 
     # for signer in ethr_signers[:-1]:
     #     signer.start()
@@ -341,8 +337,7 @@ def test_2_swap_s20_to_erc(web3_provider, ethr_leader, configuration: Config, et
 # 2. SmartContract multisig functionality
 @_test_header_log
 def test_3_confirm_tx(web3_provider, ethr_signers, configuration: Config, erc20_contract, ethr_leader):
-
-    secret_token_addr = TokenPair.objects().get(network=Network.Ethereum, coin_name="ERC").secret_coin_address
+    secret_token_addr = TokenPairing.objects().get(src_network=Network.Ethereum.name, src_coin="ERC").dst_address
 
     assert increase_block_number(web3_provider, configuration.eth_confirmations)
     # To allow the new EthrSigner to "catch up", we start it after the event submission event in Ethereum

@@ -11,7 +11,6 @@ from typing import List
 from brownie import project, network, accounts
 from pytest import fixture
 
-from src.base.db import TokenPair
 from src.base.common import Network, NATIVE_COIN_ADDRESS
 from src.ethereum.egress_leader import EthEgressLeader
 from src.ethereum.egress_signer import EthEgressSigner
@@ -141,25 +140,9 @@ def setup(make_project, db, configuration: Config, erc20_token):
     change_owner(swap_contract, configuration.multisig_acc_addr)
 
     # add token pairings to db
-    TokenPair(
-        network=Network.Ethereum,
-        coin_name='ETH',
-        coin_address=NATIVE_COIN_ADDRESS,
-        secret_coin_name='secret-ETH',
-        secret_coin_address=eth_token,
-        decimals=18,
-    ).save()
-    TokenPair(
-        network=Network.Ethereum,
-        coin_name='ERC',
-        coin_address=erc20_token.address,
-        secret_coin_name='secret-ERC',
-        secret_coin_address=erc_token,
-        decimals=18,
-    ).save()
-    TokenPairing(src_network="Ethereum", src_coin="ETH", src_address=NATIVE_COIN_ADDRESS,
+    TokenPairing(src_network=Network.Ethereum.name, src_coin="ETH", src_address=NATIVE_COIN_ADDRESS,
                  dst_network="Secret", dst_coin="secret-ETH", dst_address=eth_token, decimals=18, name="ETH").save()
-    TokenPairing(src_network="Ethereum", src_coin="ERC", src_address=erc20_token.address,
+    TokenPairing(src_network=Network.Ethereum.name, src_coin="ERC", src_address=erc20_token.address,
                  dst_network="Secret", dst_coin="secret-ERC", dst_address=erc_token, decimals=18, name="ERC").save()
 
     configuration.swap_code_hash = swap_contract_hash
