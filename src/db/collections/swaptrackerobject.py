@@ -20,7 +20,7 @@ class SwapTrackerObject(Document):
     src = StringField(required=True, unique=True)  # secret contract address
 
     @classmethod
-    def last_processed(cls, src: str):
+    def last_processed(cls, src: str) -> int:
         """
         Returns last processed contract tx sequence number
         :param src: int enum describing src network (i.e: secret20, eth)
@@ -36,7 +36,7 @@ class SwapTrackerObject(Document):
         return doc.nonce
 
     @classmethod
-    def get_or_create(cls, src: str):
+    def get_or_create(cls, src: str) -> 'SwapTrackerObject':
         """
         Returns last processed contract tx sequence number
         :param src: int enum describing src network (i.e: secret20, eth)

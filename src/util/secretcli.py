@@ -23,7 +23,6 @@ def query_encrypted_error(tx_hash: str):
 def sign_tx(unsigned_tx_path: str, multi_sig_account_addr: str, account_name: str, account: int, sequence: int):
     cmd = [
         'secretcli', 'tx', 'sign', unsigned_tx_path,
-        '--signature-only',
         '--multisig', multi_sig_account_addr,
         '--from', account_name,
         '--offline',

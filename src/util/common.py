@@ -10,6 +10,7 @@ from typing import List, Generator
 import src
 
 
+# TODO why do we set `delete=False` here??
 @contextmanager
 def temp_file(data: str):
     f = NamedTemporaryFile(mode="w+", delete=False)
@@ -19,12 +20,9 @@ def temp_file(data: str):
     remove(f.name)
 
 
-# todo: I don't think this actually works
 @contextmanager
 def temp_files(data: List[str], logger) -> Generator:
-    temp = []
-    for d in data:
-        temp.append(temp_file(d))
+    temp = [temp_file(d) for d in data]
 
     yield [manager.__enter__() for manager in temp]
     for manager in temp:

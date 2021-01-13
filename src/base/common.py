@@ -11,7 +11,7 @@ NATIVE_COIN_ADDRESS = 'native'
 # The native coin must be named appropriately, by its main denomination ('ETH', 'BTC', etc.)
 class Network(Enum):
     Ethereum = 'Ethereum'
-    Bitcoin = 'Bitcoin'
+    CosmosHub = 'CosmosHub'
 
 
 class SwapDirection(Enum):

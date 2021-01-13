@@ -134,12 +134,15 @@ class EgressLeader(Entity):
             )
 
         self._swap_tracker = {sec_addr: SwapTrackerObject.get_or_create(src=sec_addr) for sec_addr in self._token_map}
+        self.sequence = 0
+        self.update_sequence()
 
     def work(self):
         """This is the high-level entry point for the leader"""
         for swap_event in self._get_new_swap_events():
             try:
                 tx_hash = self._handle_swap(swap_event)
+                self.sequence += 1
                 self._store_swap(swap_event, tx_hash)
             except SwapFailed as err:
                 self._store_failed_swap(err.event, err.data)
@@ -185,8 +188,7 @@ class EgressLeader(Entity):
         else:
             return self.handle_non_native_swap(swap_event)
 
-    @classmethod
-    def _store_swap(cls, swap_event: SwapEvent, tx_hash: str):
+    def _store_swap(self, swap_event: SwapEvent, tx_hash: str):
         # TODO should we do something better than just this assertion?
         assert swap_event.direction == SwapDirection.FromSecretNetwork
 
@@ -195,12 +197,13 @@ class EgressLeader(Entity):
             src_tx_hash=swap_event.id,
             src_coin=swap_event.src_coin_address,
             dst_coin=swap_event.dst_coin_address,
-            dst_network=cls.native_network().name,
+            dst_network=self.native_network().name,
             dst_address=swap_event.recipient,
             dst_tx_hash=tx_hash,
             unsigned_tx=swap_event.data,
             amount=str(swap_event.amount),
-            status=Status.SWAP_SUBMITTED
+            status=Status.SWAP_SUBMITTED,
+            sequence=self.sequence,
         )
         try:
             swap.save()
@@ -243,6 +246,17 @@ class EgressLeader(Entity):
     @classmethod
     @abstractmethod
     def native_network(cls) -> Network:
+        pass
+
+    @abstractmethod
+    def update_sequence(self):
+        """reset the sequence number to its current value
+
+        Some networks require a sequence number to be included in the creation of each transaction,
+        and transactions must be sent in the order of their included sequence number.
+        The sequence number is incremented by one per tx, for each address separately.
+        This means that if a tx fails, we need to rollback the sequence number to that of the last successful tx.
+        """
         pass
 
     @abstractmethod
@@ -566,7 +580,7 @@ class IngressSigner(Entity):
             try:
                 self._validate_and_sign(swap)
                 self.logger.info(f"Signed transaction successfully id: {swap.id}")
-            except ValueError as e:
+            except (ValueError, LookupError, TypeError) as e:
                 self.logger.error(f'Failed to sign transaction: {swap} error: {e}')
                 failed = True
 

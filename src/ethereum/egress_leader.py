@@ -36,6 +36,10 @@ class EthEgressLeader(EgressLeader):
     def native_network(cls) -> Network:
         return Network.Ethereum
 
+    def update_sequence(self):
+        # No action needed for ethereum
+        pass
+
     def handle_native_swap(self, swap_event: SwapEvent) -> str:
         """This should handle swaps from the secret version of a native coin, back to the native coin"""
         if self.config.network == "mainnet":

@@ -129,7 +129,7 @@ class EthEgressSigner(EgressSigner):
         tx_hash = broadcast_transaction(tx)
 
         self.logger.info(f"Signed transaction - signer: {self._account}, signed msg: {msg}, "
-                             f"tx hash: {tx_hash.hex()}")
+                         f"tx hash: {tx_hash.hex()}")
 
         swap = SwapTrackerObject.objects().get(src=signer_id(self._account))
         swap.update(nonce=submission['blockNumber'])

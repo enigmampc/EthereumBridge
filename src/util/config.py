@@ -45,10 +45,6 @@ class Config(Model):
 
     # multisig stuff
     signatures_threshold: fields.Int(normalizers=[int])
-    multisig_wallet_address: fields.Str()  # Ethereum address
-    multisig_acc_addr: fields.Str()  # SN address
-    multisig_key_name: fields.Str()
-    secret_signers: fields.Str()
 
     # ethereum stuff
     eth_node: fields.Str()
@@ -56,13 +52,30 @@ class Config(Model):
     eth_start_block: fields.Int(normalizers=[int])
     eth_confirmations: fields.Int(normalizers=[int])
 
-    # eth account stuff
+    # eth signer stuff
     eth_address: fields.Optional(fields.Str)
     eth_private_key: fields.Optional(fields.Str)
     pkcs11_module: fields.Optional(fields.Str)
     token: fields.Optional(fields.Str)
     user_pin: fields.Optional(fields.Str)
     label: fields.Optional(fields.Str)
+
+    # eth multisig stuff
+    multisig_wallet_address: fields.Str()  # Ethereum address
+
+    # cosmos stuff
+    cosmos_node: fields.Str()
+    cosmos_chain_id: fields.Str()
+    cosmos_multisig_addr: fields.Str
+
+    # cosmos signer stuff
+    cosmos_key_file: fields.Str()
+    cosmos_key_name: fields.Str()
+    cosmos_key_password: fields.Str()
+
+    # cosmos multisig stuff
+    cosmos_multisig_key_name: fields.Str()
+    cosmos_signers: fields.Str()
 
     # oracle stuff
     ethgastation_api_key: fields.Optional(fields.Str)
@@ -75,14 +88,20 @@ class Config(Model):
     scrt_swap_address: fields.Str()
     swap_code_hash: fields.Str()
 
-    # scrt account stuff
+    # secret network signer stuff
     secret_key_file: fields.Str()
     secret_key_name: fields.Str()
     secret_key_password: fields.Optional(fields.Str)
 
+    # secret network multisig stuff
+    multisig_acc_addr: fields.Str()  # SN address
+    multisig_key_name: fields.Str()
+    secret_signers: fields.Str()
+
     # warnings
     eth_funds_warning_threshold: fields.Float(normalizers=[float])
     scrt_funds_warning_threshold: fields.Float(normalizers=[float])
+    # cosmos_funds_warning_threshold: fields.Float(normalizers=[float])
 
 
 def get_config(config_file: str = None) -> Config:
