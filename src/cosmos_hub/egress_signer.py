@@ -1,11 +1,10 @@
 from typing import Iterable, Any, Tuple
 
-from .gaia import GaiaCli
 from ..base import EgressSigner, Network, SwapEvent
 from ..db import Swap, Status, Signatures
 from ..util.common import temp_file
 from ..util.config import Config
-from ..util.crypto_store.crypto_manager import CryptoManagerBase
+from ..util.gaia import GaiaCli
 
 
 class CosmosEgressSigner(EgressSigner):

@@ -1,11 +1,10 @@
 from typing import List
 
-from .gaia import GaiaCli, GaiaCliError
 from ..base import EgressLeader, Network, SwapEvent, SwapFailed
 from ..db import Signatures, Swap, Status
 from ..util.common import SecretAccount, temp_file, temp_files
 from ..util.config import Config
-from ..util.crypto_store.crypto_manager import CryptoManagerBase
+from ..util.gaia import GaiaCli, GaiaCliError
 
 
 class CosmosEgressLeader(EgressLeader):

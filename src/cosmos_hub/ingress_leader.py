@@ -1,10 +1,10 @@
 from typing import Iterable, Dict, Optional
 
-from .gaia import GaiaCli, GaiaCliError
 from ..base import IngressLeader, Network, SwapEvent, SwapDirection
 from ..db import SwapTrackerObject
 from ..util.common import SecretAccount
 from ..util.config import Config
+from ..util.gaia import GaiaCli, GaiaCliError
 
 
 PAGE_TRACKER = 'CosmosIngressLeader-PageTracker'

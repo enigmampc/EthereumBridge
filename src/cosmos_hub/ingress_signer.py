@@ -1,7 +1,7 @@
-from .gaia import GaiaCli
 from ..base import IngressSigner, Network
 from ..util.common import SecretAccount
 from ..util.config import Config
+from ..util.gaia import GaiaCli
 
 
 class CosmosIngressSigner(IngressSigner):

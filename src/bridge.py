@@ -5,7 +5,7 @@ from typing import List
 
 from src.base import Entity
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
-from src.cosmos_hub.gaia import GaiaCli
+from src.util.gaia import GaiaCli
 from src.db import database
 from src.ethereum import EthEgressLeader, EthEgressSigner, EthIngressLeader, EthIngressSigner
 from src.cosmos_hub import CosmosEgressLeader, CosmosEgressSigner, CosmosIngressLeader, CosmosIngressSigner
