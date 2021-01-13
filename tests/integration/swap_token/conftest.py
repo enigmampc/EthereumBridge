@@ -11,7 +11,7 @@ from typing import List
 from brownie import project, network, accounts
 from pytest import fixture
 
-from src.base.common import Network, NATIVE_COIN_ADDRESS
+from src.base import Network, NATIVE_COIN_ADDRESS
 from src.ethereum.egress_leader import EthEgressLeader
 from src.ethereum.egress_signer import EthEgressSigner
 from src.ethereum.ingress_leader import EthIngressLeader

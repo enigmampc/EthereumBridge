@@ -3,8 +3,7 @@ from typing import List
 from web3.exceptions import TransactionNotFound
 from web3.contract import LogReceipt
 
-from ..base import EgressLeader, SwapEvent, SwapFailed, Network, get_tx_hash
-from ..base.common import NATIVE_COIN_ADDRESS
+from ..base import EgressLeader, SwapEvent, SwapFailed, Network, get_tx_hash, NATIVE_COIN_ADDRESS
 from ..contracts.ethereum import message
 from ..contracts.ethereum.ethr_contract import broadcast_transaction
 from ..contracts.ethereum.event_listener import EventTracker

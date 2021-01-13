@@ -4,7 +4,7 @@ from typing import Dict, List
 from web3 import Web3
 from web3.datastructures import AttributeDict
 
-from src.base.common import NATIVE_COIN_ADDRESS
+from src.base import NATIVE_COIN_ADDRESS
 from src.util.common import project_base_path
 
 from .ethr_contract import EthereumContract

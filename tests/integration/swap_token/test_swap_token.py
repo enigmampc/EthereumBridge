@@ -7,7 +7,7 @@ from time import sleep
 
 from web3 import Web3
 
-from src.base.common import Network
+from src.base import Network
 from src.db import Swap, Status, SwapTrackerObject, Signatures, TokenPairing
 
 from src.util.common import project_base_path

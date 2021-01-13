@@ -1,7 +1,6 @@
 from typing import Iterable, Any, Dict, Tuple
 
-from ..base import EgressSigner, SwapEvent, Network
-from ..base.common import NATIVE_COIN_ADDRESS
+from ..base import EgressSigner, SwapEvent, Network, NATIVE_COIN_ADDRESS
 from ..contracts.ethereum import message
 from ..contracts.ethereum.ethr_contract import broadcast_transaction
 from ..contracts.ethereum.multisig_wallet import MultisigWallet
