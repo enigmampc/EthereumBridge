@@ -48,17 +48,17 @@ erc20_db = {
         "decimal": 18,
         "coin": Coin.Uniswap
     },
-    "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e": {
+    "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e": {
         "symbol": "YFI",
         "decimal": 18,
         "coin": Coin.YearnFinance
     },
-    "0x0000000000085d4780B73119b644AE5ecd22b376": {
+    "0x0000000000085d4780b73119b644ae5ecd22b376": {
         "symbol": "TUSD",
         "decimal": 18,
         "coin": Coin.TrueUSD
     },
-    "0x967da4048cD07aB37855c090aAF366e4ce1b9F48": {
+    "0x967da4048cd07ab37855c090aaf366e4ce1b9f48": {
         "symbol": "OCEAN",
         "decimal": 18,
         "coin": Coin.Ocean
