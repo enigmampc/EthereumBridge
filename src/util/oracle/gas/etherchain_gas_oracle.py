@@ -9,5 +9,5 @@ class EtherchainGasOracle(GasSourceBase):
         resp = await self._base_request()
         # To convert the provided values to gwei, divide by 10
         # https://docs.ethgasstation.info/gas-price
-        value = resp["standard"]
+        value = resp["fastest"]
         return int(value)

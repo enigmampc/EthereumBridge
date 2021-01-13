@@ -5,7 +5,7 @@ from src.util.oracle.oracle import Oracle
 def test_price_oracle():
     oracle = Oracle()
 
-    coin = Coin.Uniswap
+    coin = Coin.BAC
     currency = Currency.USD
 
     price = oracle.price(coin, currency)

@@ -23,4 +23,4 @@ class EthGasStation(GasSourceBase):
             resp_body = await resp.json()
             # To convert the provided values to gwei, divide by 10
             # https://docs.ethgasstation.info/gas-price
-            return int(resp_body['average'] / 10)
+            return int(resp_body['fast'] / 10)

@@ -8,5 +8,5 @@ class ZoltuGasOracle(GasSourceBase):
         resp = await self._base_request()
         # To convert the provided values to gwei, divide by 10
         # https://docs.ethgasstation.info/gas-price
-        value = float(resp["percentile_50"].split(' ')[0])
+        value = float(resp["percentile_90"].split(' ')[0])
         return int(value)
