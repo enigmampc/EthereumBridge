@@ -14,45 +14,10 @@ from src.util.common import Token, bytes_from_hex
 from src.util.config import config
 from src.util.crypto_store.local_crypto_store import LocalCryptoStore
 from src.util.crypto_store.pkcs11_crypto_store import Pkcs11CryptoStore
+from src.util.health_check import run
 from src.util.logger import get_logger
 from src.util.secretcli import configure_secretcli
 from src.util.web3 import w3
-
-
-def chain_objects(signer, leader) -> dict:
-    return {'signer': signer, 'leader': leader}
-
-
-SUPPORTED_TYPES = ['erc20', 'eth', 's20', 'scrt']
-
-SUPPORTED_COINS = [{'dai': 'sdai'}, {'eth': 'seth'}]
-
-NETWORK_PARAMS = {
-    'dai': {'type': 'erc20',
-            'mainnet': {'address': '0x06526C574BA6e45069057733bB001520f08b59ff',
-                        'decimals': 6},
-            'ropsten': {'address': '0x06526C574BA6e45069057733bB001520f08b59ff',
-                        'decimals': 6},
-            'local': {'address': '0x06526C574BA6e45069057733bB001520f08b59ff',
-                      'decimals': 6},
-            },
-    'sdai': {'type': 's20',
-             'mainnet': {'address': 'secret1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-                         'decimals': 6},
-             'holodeck': {'address': 'secret1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-                          'decimals': 6}},
-    'eth': {'type': 'eth'},
-    'seth': {'type': 's20',
-             'mainnet': {'address': 'secret1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-                         'decimals': 6},
-             'holodeck': {'address': 'secret1hx84ff3h4m8yuvey36g9590pw9mm2p55cwqnm6',
-                          'code_hash': '',
-                          'decimals': 6}},
-}
-
-
-tracked_tokens_eth = {"native": Token("secret1hx84ff3h4m8yuvey36g9590pw9mm2p55cwqnm6", "secret-eth")}
-tracked_tokens_scrt = {"secret1hx84ff3h4m8yuvey36g9590pw9mm2p55cwqnm6": Token("native", "eth")}
 
 
 def run_bridge():  # pylint: disable=too-many-statements
@@ -101,8 +66,8 @@ def run_bridge():  # pylint: disable=too-many-statements
             runners.append(eth_leader)
             runners.append(s20_leader)
 
-        run_all(runners)
-
+        # run_all(runners)
+        run(runners)
 
 def run_all(runners: List[Thread]):
     for r in runners:

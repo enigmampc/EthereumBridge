@@ -48,6 +48,9 @@ class SecretManager(Thread):
         self.event_listener.register(self._handle, contract.tracked_event(),)
         super().__init__(group=None, name="SecretManager", target=self.run, **kwargs)
 
+    def running(self):
+        return self.is_alive() and self.event_listener.is_alive()
+
     @property
     def _sequence(self):
         return self.sequence

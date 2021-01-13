@@ -70,6 +70,9 @@ class EtherLeader(Thread):
         self.stop_event = Event()
         super().__init__(group=None, name="EtherLeader", target=self.run, **kwargs)
 
+    def running(self):
+        return self.is_alive() and self.event_listener.is_alive()
+
     def stop(self):
         self.logger.info("Stopping")
         self.event_listener.stop()

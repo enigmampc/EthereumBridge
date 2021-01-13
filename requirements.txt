@@ -12,3 +12,4 @@ rlp
 ecdsa
 # rusty-rlp
 serde
+tornado
