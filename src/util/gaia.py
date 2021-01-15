@@ -41,12 +41,12 @@ class GaiaCli:
     def import_key(self, name: str, path: str, password: str = ''):
         self._run(['keys', 'import', name, path], input=password+'\n')
 
-    def create_offline_key(self, name: str, pubkey: str) -> Dict:
-        return self._json_run(['keys', 'add', name, f'--pubkey', pubkey])
+    def create_offline_key(self, name: str, pubkey: str):
+        return self._run(['keys', 'add', name, f'--pubkey', pubkey])
 
-    def create_multisig_key(self, name: str, threshold: int, signers: List[str]) -> Dict:
-        return self._json_run([
-            'keys', 'add', name, '--signers', ','.join(signers), '--multisig-threshold', str(threshold)
+    def create_multisig_key(self, name: str, threshold: int, signers: List[str]):
+        return self._run([
+            'keys', 'add', name, '--multisig', ','.join(signers), '--multisig-threshold', str(threshold)
         ])
 
     def query_tx(self, tx_hash) -> Dict:

@@ -146,7 +146,7 @@ def configure_secretcli(config: Config):  # pylint: disable=too-many-statements,
     cmd = ['secretcli', 'keys', 'list']
     result = run_secret_cli(cmd)
     if result.strip() != '[]':  # sometimes \n is added to the result
-        logger.info(f"{result}")
+        logger.info(result)
         logger.info("CLI already set up")
         return
 
@@ -163,21 +163,22 @@ def configure_secretcli(config: Config):  # pylint: disable=too-many-statements,
     parsed_signers = config.secret_signers.replace(' ', '').split(',')
 
     for i, key in enumerate(parsed_signers):
-        signers.append(f'ms_signer{i}')
-        run_secret_cli(['secretcli', 'keys', 'add', f'ms_signer{i}', f'--pubkey={key}'])
+        signer_name = f'ms_signer{i}'
+        signers.append(signer_name)
+        run_secret_cli(['secretcli', 'keys', 'add', signer_name, '--pubkey', key])
 
     run_secret_cli([
-        'secretcli', 'keys', 'add', f'{config.multisig_key_name}',
-        f"--multisig={','.join(signers)}",
+        'secretcli', 'keys', 'add', config.multisig_key_name,
+        '--multisig', ','.join(signers),
         '--multisig-threshold', f'{config.signatures_threshold}'
     ])
 
     logger.info(f'importing private key from {config.secret_key_file} with name {config.secret_key_name}')
 
     # import key
-    key_path = os.path.join(f'{config.keys_base_path}', f'{config.secret_key_file}')
+    key_path = os.path.join(config.keys_base_path, config.secret_key_file)
     process = subprocess.Popen(
-        ['secretcli', 'keys', 'import', f'{config.secret_key_name}', f'{key_path}'],
+        ['secretcli', 'keys', 'import', config.secret_key_name, key_path],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
@@ -191,8 +192,8 @@ def configure_secretcli(config: Config):  # pylint: disable=too-many-statements,
 
     logger.debug("copying transaction key..")
     # copy transaction key from shared location
-    src_key_path = os.path.join(f'{config.keys_base_path}', 'id_tx_io.json')
-    dst_key_path = os.path.join(f'{config.secretcli_home}', 'id_tx_io.json')
+    src_key_path = os.path.join(config.keys_base_path, 'id_tx_io.json')
+    dst_key_path = os.path.join(config.secretcli_home, 'id_tx_io.json')
     copyfile(src_key_path, dst_key_path)
 
     # test configuration

@@ -71,7 +71,7 @@ class Config(Model):
     # cosmos signer stuff
     cosmos_key_file: fields.Str()
     cosmos_key_name: fields.Str()
-    cosmos_key_password: fields.Str()
+    cosmos_key_password: fields.Optional(fields.Str)
 
     # cosmos multisig stuff
     cosmos_multisig_key_name: fields.Str()
@@ -101,7 +101,7 @@ class Config(Model):
     # warnings
     eth_funds_warning_threshold: fields.Float(normalizers=[float])
     scrt_funds_warning_threshold: fields.Float(normalizers=[float])
-    # cosmos_funds_warning_threshold: fields.Float(normalizers=[float])
+    cosmos_funds_warning_threshold: fields.Float(normalizers=[float])
 
 
 def get_config(config_file: str = None) -> Config:

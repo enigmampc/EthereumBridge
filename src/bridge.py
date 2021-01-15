@@ -1,3 +1,4 @@
+import os
 import sys
 from logging import Logger
 from time import sleep
@@ -77,39 +78,39 @@ def setup_gaiacli_keys(cli: GaiaCli, logger: Logger):
     logger.info("importing offline keys for all cosmos signers")
     parsed_signers = config.cosmos_signers.replace(' ', '').split(',')
     signers: List[str] = []
-    for i, signer in parsed_signers:
+    for i, signer in enumerate(parsed_signers):
         signer_name = f"cosmos-signer-{i}"
         signers.append(signer_name)
+        logger.info(f"importing signer {signer_name} with pubkey {signer}")
         cli.create_offline_key(signer_name, signer)
 
     logger.info("creating cosmos multisig address")
-    output = cli.create_multisig_key(config.cosmos_multisig_key_name, config.signatures_threshold, signers)
-    print(output)
+    cli.create_multisig_key(config.cosmos_multisig_key_name, config.signatures_threshold, signers)
 
-    logger.info(f'importing private key from {config.cosmos_key_file} with name {config.cosmos_key_name}')
-    cli.import_key(config.cosmos_key_name, config.cosmos_key_file, config.cosmos_key_password)
+    key_path = os.path.join(config.keys_base_path, config.cosmos_key_file)
+    logger.info(f'importing private key from {key_path} with name {config.cosmos_key_name}')
+    cli.import_key(config.cosmos_key_name, key_path, config.cosmos_key_password)
 
 
 def get_cosmos_entities(logger: Logger) -> List[Entity]:
     cli = GaiaCli('secretcli', 'uscrt', 'holodeck-2')
     # cli = GaiaCli()
-    cli.configure('http://bootstrap.secrettestnet.io:26657')
+    cli.configure(config.cosmos_node)
     setup_gaiacli_keys(cli, logger)
 
     sn_signer_account = get_sn_signer_account()
     cosmos_signer_account = cli.get_key_info(config.cosmos_key_name)['address']
     logger.info(f"starting with ATOM address {cosmos_signer_account}")
 
-    eth_signer = CosmosEgressSigner(config, cosmos_signer_account, config.multisig_wallet_address, cli)
-    sn_signer = CosmosIngressSigner(config, sn_signer_account, config.multisig_wallet_address, cli)
+    eth_signer = CosmosEgressSigner(config, cosmos_signer_account, config.cosmos_multisig_addr, cli)
+    sn_signer = CosmosIngressSigner(config, sn_signer_account, config.cosmos_multisig_addr, cli)
 
     if config.mode.lower() == 'leader':
         sn_leader_account = get_sn_leader_account()
-        cosmos_multisig_addr = cli.get_key_info(config.cosmos_multisig_key_name)['address']
-        cosmos_multisig_account = SecretAccount(config.cosmos_multisig_key_name, cosmos_multisig_addr)
+        cosmos_multisig_account = SecretAccount(config.cosmos_multisig_addr, config.cosmos_multisig_key_name)
 
         eth_leader = CosmosEgressLeader(config, cosmos_multisig_account, cli)
-        sn_leader = CosmosIngressLeader(config, sn_leader_account, config.multisig_wallet_address, cli)
+        sn_leader = CosmosIngressLeader(config, sn_leader_account, config.cosmos_multisig_addr, cli)
 
         entities = [eth_signer, sn_signer, eth_leader, sn_leader]
     else:
@@ -118,7 +119,7 @@ def get_cosmos_entities(logger: Logger) -> List[Entity]:
     return entities
 
 
-def run_bridge():  # pylint: disable=too-many-statements
+def run_bridge():
     logger = get_logger(logger_name='runner', loglevel=config.log_level)
     try:
         configure_secretcli(config)

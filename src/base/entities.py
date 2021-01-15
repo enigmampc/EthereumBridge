@@ -132,7 +132,10 @@ class EgressLeader(Entity):
                 pair.dst_address, pair.dst_coin, pair.decimals
             )
 
-        self._swap_tracker = {sec_addr: SwapTrackerObject.get_or_create(src=sec_addr) for sec_addr in self._token_map}
+        self._swap_tracker = {
+            sec_addr: SwapTrackerObject.get_or_create(src=f"{type(self).__name__}-{sec_addr}")
+            for sec_addr in self._token_map
+        }
         self.sequence = 0
         self.update_sequence()
 

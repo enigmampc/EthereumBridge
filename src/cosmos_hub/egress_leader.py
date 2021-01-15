@@ -9,9 +9,9 @@ from ..util.gaia import GaiaCli, GaiaCliError
 
 class CosmosEgressLeader(EgressLeader):
     def __init__(self, config: Config, multisig: SecretAccount, cli: GaiaCli):
-        super().__init__(config)
-        self._multisig = multisig
         self._cli = cli
+        self._multisig = multisig
+        super().__init__(config)
         self._multisig_account_num = self._cli.get_account_details(multisig.address)['value']['account_number']
         self._pending_tx_hashes = []
         self._failed_tx_hashes = []

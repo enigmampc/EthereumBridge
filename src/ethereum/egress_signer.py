@@ -16,7 +16,7 @@ SUBMISSION = 'Submission'
 
 
 def signer_id(account):
-    return f'signer-{account}'
+    return f'eth-signer-{account}'
 
 
 class EthEgressSigner(EgressSigner):

@@ -36,16 +36,17 @@ class SwapTrackerObject(Document):
         return doc.nonce
 
     @classmethod
-    def get_or_create(cls, src: str) -> 'SwapTrackerObject':
+    def get_or_create(cls, src: str, default: int = -1) -> 'SwapTrackerObject':
         """
         Returns last processed contract tx sequence number
         :param src: int enum describing src network (i.e: secret20, eth)
+        :param default: int default value for the nonce when the tracker doesn't exist
         """
 
         try:
             doc = cls.objects.get(src=src)
         except DoesNotExist:
-            doc = cls(nonce=-1, src=src).save()
+            doc = cls(nonce=default, src=src).save()
         except MultipleObjectsReturned as e:  # Corrupted DB
             raise e
 

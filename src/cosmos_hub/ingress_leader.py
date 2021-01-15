@@ -22,25 +22,26 @@ class CosmosIngressLeader(IngressLeader):
         return Network.CosmosHub
 
     def get_new_swap_events(self) -> Iterable[SwapEvent]:
-        page_tracker = SwapTrackerObject.get_or_create(PAGE_TRACKER)
-        tx_tracker = SwapTrackerObject.get_or_create(TX_TRACKER)
+        page_tracker = SwapTrackerObject.get_or_create(PAGE_TRACKER, 1)
+        tx_tracker = SwapTrackerObject.get_or_create(TX_TRACKER, 0)
         new_tx_available = True
 
         while new_tx_available:
             page = page_tracker.nonce
             addr = self._cosmos_multisig
-            self.logger.info(f"fetching page {page}of txs to {addr}")
+            self.logger.info(f"fetching page {page} of txs to {addr}")
             try:
-                new_txs = self._cli.query_txs_to(addr, page)
+                txs_page = self._cli.query_txs_to(addr, page)
             except GaiaCliError as e:
-                if 'page should be within' not in e.inner.stderr:
-                    self.logger.warning(f"unexpected error while querying page {page} of txs to {addr}")
+                err_message = e.inner.stderr
+                if 'page should be within' not in err_message:
+                    self.logger.warning(f"unexpected error while querying page {page} of txs to {addr}: {err_message}")
                 new_tx_available = False
                 continue
 
             # Skip txs in this page that we already processed
-            if tx_tracker.nonce != 0:
-                new_txs = new_txs[tx_tracker.nonce:]
+            last_tx_index = tx_tracker.nonce
+            new_txs = txs_page[last_tx_index:] if last_tx_index != 0 else txs_page
 
             for tx in new_txs:
                 tx_hash = tx['txhash']
@@ -58,8 +59,9 @@ class CosmosIngressLeader(IngressLeader):
 
             tx_tracker.nonce = 0
             tx_tracker.save()
-            page_tracker.nonce += 1
-            page_tracker.save()
+            if len(txs_page) == GaiaCli.DEFAULT_QUERY_LIMIT:
+                page_tracker.nonce += 1
+                page_tracker.save()
 
     def _parse_tx(self, tx: Dict) -> Optional[SwapEvent]:
         tx_hash = tx['txhash']
