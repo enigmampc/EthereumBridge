@@ -16,6 +16,17 @@
   "secret_key_file": "",
   "secret_key_name": "",
 
+  "cosmos_node": "",
+  "cosmos_chain_id": "",
+  "cosmos_multisig_addr": "",
+
+  "cosmos_key_file": "",
+  "cosmos_key_name": "",
+
+  "cosmos_multisig_key_name": "",
+  "cosmos_signers": "",
+
+
   "chain_id": "enigma-testnet",
   "multisig_wallet_address": "0xef06222f18a008cd3635a8325208fc0ff934d830",
   "secret_token_address": "secret1ljptw8mf5wk9n69j2v5vl4w2laqlrgspxykanp",
@@ -34,5 +45,6 @@
   "eth_node": "http://127.0.0.1:8545",
   "ethgastation_api_key": "988d6b114be7514aad5d0c912c90f60af84770393e2a07f41b278aff0bb1",
   "eth_funds_warning_threshold": "0.1",
-  "scrt_funds_warning_threshold": "10"
+  "scrt_funds_warning_threshold": "10",
+  "cosmos_funds_warning_threshold": "10"
 }
