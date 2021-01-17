@@ -46,6 +46,9 @@ class EtherSigner(Thread):
         super().__init__(group=None, name=f"{self.__class__.__name__}-{self.account[0:5]}", target=self.run, **kwargs)
         self.setDaemon(True)  # so tests don't hang
 
+    def running(self):
+        return self.is_alive() and self.event_listener.is_alive()
+
     def run(self):
         self.logger.info("Starting..")
 

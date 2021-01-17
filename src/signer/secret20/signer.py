@@ -34,6 +34,9 @@ class Secret20Signer(Thread):
         self.account_num, _ = self._account_details()
         # signals.post_init.connect(self._tx_signal, sender=ETHSwap)  # TODO: test this with deployed db on machine
 
+    def running(self):
+        return self.is_alive()
+
     def stop(self):
         self.logger.info("Stopping..")
         self.stop_event.set()

@@ -62,6 +62,9 @@ class Secret20Leader(Thread):
         for tx in Swap.objects(status=Status.SWAP_SIGNED).order_by('sequence'):
             self._create_and_broadcast(tx)
 
+    def running(self):
+        return self.is_alive() and self.manager.is_alive() and self.manager.running()
+
     def stop(self):
         self.logger.info("Stopping")
         self.manager.stop()

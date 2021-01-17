@@ -28,7 +28,13 @@ class CoinGecko(PriceSourceBase):
         Coin.Aave: "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
         Coin.Kyber: "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
         Coin.BAC: "0x3449fc1cd036255ba1eb19d65ff4ba2b8903a69a",
-        Coin.WrappedBTC: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+        Coin.WrappedBTC: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        Coin.ReserveRights: "0x8762db106b2c2a0bccb3a80d1ed41273552616e8",
+        Coin.Sushi: "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+        Coin.RENBTC: "0xeb4c2781e4eba804ce9a9803c67d0893436bb27d",
+        Coin.USDC: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        Coin.Republic: "0x408e41876cccdc0f92210600ef50372656052a38",
+        Coin.DefiPulseIndex: "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b"
     }
 
     currency_map = {Currency.USD: "usd"}
