@@ -23,6 +23,11 @@ class BinancePriceOracle(PriceSourceBase):
         Coin.Synthetix: "SNX",
         Coin.Aave: "AAVE",
         Coin.Kyber: "KNC",
+        Coin.RENBTC: "BTC",  # just use BTC for this, should be fine
+        Coin.Republic: "REN",
+        Coin.ReserveRights: "RSR",
+        Coin.Sushi: "SUSHI",
+        Coin.USDC: "USDC"
     }
 
     currency_map = {Currency.USD: "USDT"}

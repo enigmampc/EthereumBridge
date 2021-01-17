@@ -25,9 +25,45 @@ class Coin(Enum):
     Kyber = auto()
     WrappedBTC = auto()
     BAC = auto()
+    USDC = auto()
+    Republic = auto()
+    RENBTC = auto()
+    ReserveRights = auto()
+    Sushi = auto()
+    DefiPulseIndex = auto()
 
 
 erc20_db = {
+    "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b": {
+        "symbol": "DPI",
+        "decimal": 18,
+        "coin": Coin.DefiPulseIndex
+    },
+    "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2": {
+        "symbol": "SUSHI",
+        "decimal": 18,
+        "coin": Coin.Sushi
+    },
+    "0x8762db106b2c2a0bccb3a80d1ed41273552616e8": {
+        "symbol": "RSR",
+        "decimal": 18,
+        "coin": Coin.ReserveRights
+    },
+    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+        "symbol": "USDC",
+        "decimal": 6,
+        "coin": Coin.USDC
+    },
+    "0x408e41876cccdc0f92210600ef50372656052a38": {
+        "symbol": "REN",
+        "decimal": 18,
+        "coin": Coin.REN
+    },
+    "0xeb4c2781e4eba804ce9a9803c67d0893436bb27d": {
+        "symbol": "RENBTC",
+        "decimal": 18,
+        "coin": Coin.RENBTC
+    },
     "0xdac17f958d2ee523a2206206994597c13d831ec7": {
         "symbol": "USDT",
         "decimal": 6,
