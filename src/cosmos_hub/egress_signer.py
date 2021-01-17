@@ -23,12 +23,12 @@ class CosmosEgressSigner(EgressSigner):
         return Network.CosmosHub
 
     def get_new_submissions(self) -> Iterable[Any]:
-        return Swap.objects(status=Status.SWAP_UNSIGNED)
+        return Swap.objects(status=Status.SWAP_UNSIGNED, dst_network=self.native_network().value)
 
     def get_token_and_nonce(self, submission: Swap) -> Tuple[str, int]:
         """return the address of the token on the foreign network, and the swap nonce"""
         # The nonce was saved in dst_tx_hash because `CosmosEgressLeader.handle_native_swap` returned the swap nonce
-        return submission.dst_coin, submission.dst_tx_hash
+        return submission.src_coin, submission.dst_tx_hash
 
     def verify_submission(self, submission_data: Swap, swap_event: SwapEvent) -> bool:
         # No validation needs to be done here

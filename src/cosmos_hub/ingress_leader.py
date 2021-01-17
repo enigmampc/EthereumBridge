@@ -57,11 +57,13 @@ class CosmosIngressLeader(IngressLeader):
                     tx_tracker.nonce += 1
                     tx_tracker.save()
 
-            tx_tracker.nonce = 0
-            tx_tracker.save()
             if len(txs_page) == GaiaCli.DEFAULT_QUERY_LIMIT:
+                tx_tracker.nonce = 0
+                tx_tracker.save()
                 page_tracker.nonce += 1
                 page_tracker.save()
+            else:
+                new_tx_available = False
 
     def _parse_tx(self, tx: Dict) -> Optional[SwapEvent]:
         tx_hash = tx['txhash']
@@ -89,7 +91,7 @@ class CosmosIngressLeader(IngressLeader):
 
         sender = msg_details['from_address']
         sent_currency = amounts[0]
-        amount = sent_currency['amount']
+        amount = int(sent_currency['amount'])
         denom = sent_currency['denom']
         if denom not in self._secret_token_map:
             self.logger.info(f"tx {tx_hash} transferred an unsupported token: {denom}")

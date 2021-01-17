@@ -42,7 +42,7 @@ class CosmosIngressSigner(IngressSigner):
             return False
 
         sent_currency = details['amount'][0]
-        if amount != sent_currency['amount']:
+        if amount != int(sent_currency['amount']):
             self.logger.info(f"tx {tx_hash} sent the wrong amount")
             return False
 

@@ -596,7 +596,7 @@ class IngressSigner(Entity):
             return
 
         if not self._swap_is_valid(swap):
-            self.logger.error(f"Validation failed. Signer: {self._multisig.name}. Tx id:{swap.id}.")
+            self.logger.error(f"Validation failed. Signer: {self._multisig.name}. Tx id: {swap.id}.")
             swap.status = Status.SWAP_FAILED
             swap.save()
             raise ValueError
