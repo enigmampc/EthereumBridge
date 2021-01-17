@@ -53,6 +53,7 @@ class CustomFormatter(logging.Formatter):
 
 def get_logger(logger_name: str = 'enigma', loglevel: str = 'debug', db_name: str = '') -> logging.Logger:
     logger = logging.getLogger(logger_name)
+    logger.propagate = False
     loglevel = getattr(logging, loglevel.upper(), logging.DEBUG)
     if not isinstance(loglevel, int):
         raise ValueError('Invalid log level: %s' % loglevel)

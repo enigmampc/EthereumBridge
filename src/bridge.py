@@ -69,6 +69,7 @@ def run_bridge():  # pylint: disable=too-many-statements
         # run_all(runners)
         run(runners)
 
+
 def run_all(runners: List[Thread]):
     for r in runners:
         r.start()
