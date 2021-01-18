@@ -26,7 +26,7 @@ class Coin(Enum):
     WrappedBTC = auto()
     BAC = auto()
     USDC = auto()
-    Republic = auto()
+    REN = auto()
     RENBTC = auto()
     ReserveRights = auto()
     Sushi = auto()
@@ -61,7 +61,7 @@ erc20_db = {
     },
     "0xeb4c2781e4eba804ce9a9803c67d0893436bb27d": {
         "symbol": "RENBTC",
-        "decimal": 18,
+        "decimal": 8,
         "coin": Coin.RENBTC
     },
     "0xdac17f958d2ee523a2206206994597c13d831ec7": {

@@ -24,7 +24,7 @@ class BinancePriceOracle(PriceSourceBase):
         Coin.Aave: "AAVE",
         Coin.Kyber: "KNC",
         Coin.RENBTC: "BTC",  # just use BTC for this, should be fine
-        Coin.Republic: "REN",
+        Coin.REN: "REN",
         Coin.ReserveRights: "RSR",
         Coin.Sushi: "SUSHI",
         Coin.USDC: "USDC"
