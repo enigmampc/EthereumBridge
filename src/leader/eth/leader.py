@@ -183,7 +183,7 @@ class EtherLeader(Thread):
                 pass
             return
 
-        msg = message.Submit(tx_dest,
+        msg = message.Submit(w3.toChecksumAddress(tx_dest),
                              tx_amount,  # if we are swapping token, no ether should be rewarded
                              int(swap_json['nonce']),
                              tx_token,
