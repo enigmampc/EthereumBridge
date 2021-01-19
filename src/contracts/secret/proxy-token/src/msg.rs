@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Binary, HumanAddr, StdError, StdResult, Uint128};
 
-use crate::state::Tx;
 use crate::viewing_key::ViewingKey;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -18,8 +17,11 @@ pub struct InitMsg {
     pub admin: Option<HumanAddr>,
     pub symbol: String,
     pub decimals: u8,
-    pub initial_balances: Option<Vec<InitialBalance>>,
     pub prng_seed: Binary,
+    pub swap_addr: HumanAddr,
+    pub swap_code_hash: String,
+    pub token_addr: HumanAddr,
+    pub token_code_hash: String,
     pub config: Option<InitConfig>,
 }
 
@@ -41,6 +43,12 @@ pub struct InitConfig {
 }
 
 impl InitConfig {
+    pub fn new(public_total_supply: bool) -> Self {
+        Self {
+            public_total_supply: Some(public_total_supply),
+        }
+    }
+
     pub fn public_total_supply(&self) -> bool {
         self.public_total_supply.unwrap_or(false)
     }
@@ -49,19 +57,7 @@ impl InitConfig {
 #[derive(Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum HandleMsg {
-
     // Base ERC-20 stuff
-    Transfer {
-        recipient: HumanAddr,
-        amount: Uint128,
-        padding: Option<String>,
-    },
-    Send {
-        recipient: HumanAddr,
-        amount: Uint128,
-        msg: Option<Binary>,
-        padding: Option<String>,
-    },
     RegisterReceive {
         code_hash: String,
         padding: Option<String>,
@@ -75,31 +71,11 @@ pub enum HandleMsg {
         padding: Option<String>,
     },
 
-    // Allowance
-    IncreaseAllowance {
-        spender: HumanAddr,
+    // Receiver interface (This is the proper proxy)
+    Receive {
+        sender: HumanAddr,
         amount: Uint128,
-        expiration: Option<u64>,
-        padding: Option<String>,
-    },
-    DecreaseAllowance {
-        spender: HumanAddr,
-        amount: Uint128,
-        expiration: Option<u64>,
-        padding: Option<String>,
-    },
-    TransferFrom {
-        owner: HumanAddr,
-        recipient: HumanAddr,
-        amount: Uint128,
-        padding: Option<String>,
-    },
-    SendFrom {
-        owner: HumanAddr,
-        recipient: HumanAddr,
-        amount: Uint128,
-        msg: Option<Binary>,
-        padding: Option<String>,
+        msg: Binary,
     },
 
     // Admin
@@ -136,97 +112,35 @@ pub enum HandleMsg {
         amount: Uint128,
         padding: Option<String>,
     },
-
 }
 
 #[derive(Serialize, Deserialize, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum HandleAnswer {
-
     // Base
-    Transfer {
-        status: ResponseStatus,
-    },
-    Send {
-        status: ResponseStatus,
-    },
-    RegisterReceive {
-        status: ResponseStatus,
-    },
-    CreateViewingKey {
-        key: ViewingKey,
-    },
-    SetViewingKey {
-        status: ResponseStatus,
-    },
-
-    // Allowance
-    IncreaseAllowance {
-        spender: HumanAddr,
-        owner: HumanAddr,
-        allowance: Uint128,
-    },
-    DecreaseAllowance {
-        spender: HumanAddr,
-        owner: HumanAddr,
-        allowance: Uint128,
-    },
-    TransferFrom {
-        status: ResponseStatus,
-    },
-    SendFrom {
-        status: ResponseStatus,
-    },
+    Receive { status: ResponseStatus },
+    RegisterReceive { status: ResponseStatus },
+    CreateViewingKey { key: ViewingKey },
+    SetViewingKey { status: ResponseStatus },
 
     // Burn
-    Burn {
-        status: ResponseStatus,
-    },
+    Burn { status: ResponseStatus },
     // Mint
-    Mint {
-        status: ResponseStatus,
-    },
-    AddMinters {
-        status: ResponseStatus,
-    },
-    RemoveMinters {
-        status: ResponseStatus,
-    },
-    SetMinters {
-        status: ResponseStatus,
-    },
+    Mint { status: ResponseStatus },
+    AddMinters { status: ResponseStatus },
+    RemoveMinters { status: ResponseStatus },
+    SetMinters { status: ResponseStatus },
 
     // Other
-    ChangeAdmin {
-        status: ResponseStatus,
-    },
-    SetContractStatus {
-        status: ResponseStatus,
-    },
+    ChangeAdmin { status: ResponseStatus },
+    SetContractStatus { status: ResponseStatus },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     TokenInfo {},
-    ExchangeRate {},
-    Allowance {
-        owner: HumanAddr,
-        spender: HumanAddr,
-        key: String,
-        padding: Option<String>,
-    },
-    Balance {
-        address: HumanAddr,
-        key: String,
-    },
-    TransferHistory {
-        address: HumanAddr,
-        key: String,
-        page: Option<u32>,
-        page_size: u32,
-    },
-
+    Balance { address: HumanAddr, key: String },
     Minters {},
 }
 
@@ -234,13 +148,6 @@ impl QueryMsg {
     pub fn get_validation_params(&self) -> (Vec<&HumanAddr>, ViewingKey) {
         match self {
             Self::Balance { address, key } => (vec![address], ViewingKey(key.clone())),
-            Self::TransferHistory { address, key, .. } => (vec![address], ViewingKey(key.clone())),
-            Self::Allowance {
-                owner,
-                spender,
-                key,
-                ..
-            } => (vec![owner, spender], ViewingKey(key.clone())),
             _ => panic!("This query type does not require authentication"),
         }
     }
@@ -255,21 +162,8 @@ pub enum QueryAnswer {
         decimals: u8,
         total_supply: Option<Uint128>,
     },
-    ExchangeRate {
-        rate: Uint128,
-        denom: String,
-    },
-    Allowance {
-        spender: HumanAddr,
-        owner: HumanAddr,
-        allowance: Uint128,
-        expiration: Option<u64>,
-    },
     Balance {
         amount: Uint128,
-    },
-    TransferHistory {
-        txs: Vec<Tx>,
     },
 
     ViewingKeyError {
@@ -278,11 +172,6 @@ pub enum QueryAnswer {
     Minters {
         minters: Vec<HumanAddr>,
     },
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
-pub struct CreateViewingKeyResponse {
-    pub key: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

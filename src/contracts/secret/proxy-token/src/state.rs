@@ -1,12 +1,8 @@
 use std::any::type_name;
 use std::convert::TryFrom;
 
-use cosmwasm_std::{
-    Api, CanonicalAddr, Coin, HumanAddr, ReadonlyStorage, StdError, StdResult, Storage, Uint128,
-};
+use cosmwasm_std::{CanonicalAddr, HumanAddr, ReadonlyStorage, StdError, StdResult, Storage};
 use cosmwasm_storage::{PrefixedStorage, ReadonlyPrefixedStorage};
-
-use secret_toolkit::storage::{AppendStore, AppendStoreMut, TypedStore, TypedStoreMut};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -16,138 +12,16 @@ use crate::viewing_key::ViewingKey;
 use serde::de::DeserializeOwned;
 
 pub static CONFIG_KEY: &[u8] = b"config";
-pub const PREFIX_TXS: &[u8] = b"transfers";
 
 pub const KEY_CONSTANTS: &[u8] = b"constants";
 pub const KEY_TOTAL_SUPPLY: &[u8] = b"total_supply";
 pub const KEY_CONTRACT_STATUS: &[u8] = b"contract_status";
-pub const KEY_TX_COUNT: &[u8] = b"tx-count";
 pub const KEY_MINTERS: &[u8] = b"minters";
 
 pub const PREFIX_CONFIG: &[u8] = b"config";
 pub const PREFIX_BALANCES: &[u8] = b"balances";
-pub const PREFIX_ALLOWANCES: &[u8] = b"allowances";
 pub const PREFIX_VIEW_KEY: &[u8] = b"viewingkey";
 pub const PREFIX_RECEIVERS: &[u8] = b"receivers";
-
-// Note that id is a globally incrementing counter.
-// Since it's 64 bits long, even at 50 tx/s it would take
-// over 11 billion years for it to rollback. I'm pretty sure
-// we'll have bigger issues by then.
-#[derive(Serialize, Deserialize, JsonSchema, Clone, Debug)]
-pub struct Tx {
-    pub id: u64,
-    pub from: HumanAddr,
-    pub sender: HumanAddr,
-    pub receiver: HumanAddr,
-    pub coins: Coin,
-}
-
-impl Tx {
-    pub fn into_stored<A: Api>(self, api: &A) -> StdResult<StoredTx> {
-        let tx = StoredTx {
-            id: self.id,
-            from: api.canonical_address(&self.from)?,
-            sender: api.canonical_address(&self.sender)?,
-            receiver: api.canonical_address(&self.receiver)?,
-            coins: self.coins,
-        };
-        Ok(tx)
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct StoredTx {
-    pub id: u64,
-    pub from: CanonicalAddr,
-    pub sender: CanonicalAddr,
-    pub receiver: CanonicalAddr,
-    pub coins: Coin,
-}
-
-impl StoredTx {
-    pub fn into_humanized<A: Api>(self, api: &A) -> StdResult<Tx> {
-        let tx = Tx {
-            id: self.id,
-            from: api.human_address(&self.from)?,
-            sender: api.human_address(&self.sender)?,
-            receiver: api.human_address(&self.receiver)?,
-            coins: self.coins,
-        };
-        Ok(tx)
-    }
-}
-
-pub fn store_transfer<S: Storage>(
-    store: &mut S,
-    owner: &CanonicalAddr,
-    sender: &CanonicalAddr,
-    receiver: &CanonicalAddr,
-    amount: Uint128,
-    denom: String,
-) -> StdResult<()> {
-    let mut config = Config::from_storage(store);
-    let id = config.tx_count() + 1;
-    config.set_tx_count(id)?;
-
-    let coins = Coin { denom, amount };
-    let tx = StoredTx {
-        id,
-        from: owner.clone(),
-        sender: sender.clone(),
-        receiver: receiver.clone(),
-        coins,
-    };
-
-    if owner != sender {
-        append_tx(store, tx.clone(), &owner)?;
-    }
-    append_tx(store, tx.clone(), &sender)?;
-    append_tx(store, tx, &receiver)?;
-
-    Ok(())
-}
-
-fn append_tx<S: Storage>(
-    store: &mut S,
-    tx: StoredTx,
-    for_address: &CanonicalAddr,
-) -> StdResult<()> {
-    let mut store = PrefixedStorage::multilevel(&[PREFIX_TXS, for_address.as_slice()], store);
-    let mut store = AppendStoreMut::attach_or_create(&mut store)?;
-    store.push(&tx)
-}
-
-pub fn get_transfers<A: Api, S: ReadonlyStorage>(
-    api: &A,
-    storage: &S,
-    for_address: &CanonicalAddr,
-    page: u32,
-    page_size: u32,
-) -> StdResult<Vec<Tx>> {
-    let store = ReadonlyPrefixedStorage::multilevel(&[PREFIX_TXS, for_address.as_slice()], storage);
-
-    // Try to access the storage of txs for the account.
-    // If it doesn't exist yet, return an empty list of transfers.
-    let store = if let Some(result) = AppendStore::<StoredTx, _>::attach(&store) {
-        result?
-    } else {
-        return Ok(vec![]);
-    };
-
-    // Take `page_size` txs starting from the latest tx, potentially skipping `page * page_size`
-    // txs from the start.
-    let tx_iter = store
-        .iter()
-        .rev()
-        .skip((page * page_size) as _)
-        .take(page_size as _);
-    // The `and_then` here flattens the `StdResult<StdResult<Tx>>` to an `StdResult<Tx>`
-    let txs: StdResult<Vec<Tx>> = tx_iter
-        .map(|tx| tx.map(|tx| tx.into_humanized(api)).and_then(|x| x))
-        .collect();
-    txs
-}
 
 // Config
 
@@ -158,6 +32,11 @@ pub struct Constants {
     pub symbol: String,
     pub decimals: u8,
     pub prng_seed: Vec<u8>,
+    // proxy parameters
+    pub swap_addr: HumanAddr,
+    pub swap_code_hash: String,
+    pub token_addr: HumanAddr,
+    pub token_code_hash: String,
     // privacy configuration
     pub total_supply_is_public: bool,
 }
@@ -191,10 +70,6 @@ impl<'a, S: ReadonlyStorage> ReadonlyConfig<'a, S> {
 
     pub fn minters(&self) -> Vec<HumanAddr> {
         self.as_readonly().minters()
-    }
-
-    pub fn tx_count(&self) -> u64 {
-        self.as_readonly().tx_count()
     }
 }
 
@@ -281,14 +156,6 @@ impl<'a, S: Storage> Config<'a, S> {
     pub fn minters(&mut self) -> Vec<HumanAddr> {
         self.as_readonly().minters()
     }
-
-    pub fn tx_count(&self) -> u64 {
-        self.as_readonly().tx_count()
-    }
-
-    pub fn set_tx_count(&mut self, count: u64) -> StdResult<()> {
-        set_bin_data(&mut self.storage, KEY_TX_COUNT, &count)
-    }
 }
 
 /// This struct refactors out the readonly methods that we need for `Config` and `ReadonlyConfig`
@@ -331,10 +198,6 @@ impl<'a, S: ReadonlyStorage> ReadonlyConfigImpl<'a, S> {
     fn minters(&self) -> Vec<HumanAddr> {
         get_bin_data(self.0, KEY_MINTERS).unwrap()
     }
-
-    pub fn tx_count(&self) -> u64 {
-        get_bin_data(self.0, KEY_TX_COUNT).unwrap_or_default()
-    }
 }
 
 // Balances
@@ -359,30 +222,6 @@ impl<'a, S: ReadonlyStorage> ReadonlyBalances<'a, S> {
     }
 }
 
-pub struct Balances<'a, S: Storage> {
-    storage: PrefixedStorage<'a, S>,
-}
-
-impl<'a, S: Storage> Balances<'a, S> {
-    pub fn from_storage(storage: &'a mut S) -> Self {
-        Self {
-            storage: PrefixedStorage::new(PREFIX_BALANCES, storage),
-        }
-    }
-
-    fn as_readonly(&self) -> ReadonlyBalancesImpl<PrefixedStorage<S>> {
-        ReadonlyBalancesImpl(&self.storage)
-    }
-
-    pub fn balance(&self, account: &CanonicalAddr) -> u128 {
-        self.as_readonly().account_amount(account)
-    }
-
-    pub fn set_account_balance(&mut self, account: &CanonicalAddr, amount: u128) {
-        self.storage.set(account.as_slice(), &amount.to_be_bytes())
-    }
-}
-
 /// This struct refactors out the readonly methods that we need for `Balances` and `ReadonlyBalances`
 /// in a way that is generic over their mutability.
 ///
@@ -400,39 +239,6 @@ impl<'a, S: ReadonlyStorage> ReadonlyBalancesImpl<'a, S> {
             None => 0,
         }
     }
-}
-
-// Allowances
-
-#[derive(Serialize, Debug, Deserialize, Clone, PartialEq, Default, JsonSchema)]
-pub struct Allowance {
-    pub amount: u128,
-    pub expiration: Option<u64>,
-}
-
-pub fn read_allowance<S: Storage>(
-    store: &S,
-    owner: &CanonicalAddr,
-    spender: &CanonicalAddr,
-) -> StdResult<Allowance> {
-    let owner_store =
-        ReadonlyPrefixedStorage::multilevel(&[PREFIX_ALLOWANCES, owner.as_slice()], store);
-    let owner_store = TypedStore::attach(&owner_store);
-    let allowance = owner_store.may_load(spender.as_slice());
-    allowance.map(Option::unwrap_or_default)
-}
-
-pub fn write_allowance<S: Storage>(
-    store: &mut S,
-    owner: &CanonicalAddr,
-    spender: &CanonicalAddr,
-    allowance: Allowance,
-) -> StdResult<()> {
-    let mut owner_store =
-        PrefixedStorage::multilevel(&[PREFIX_ALLOWANCES, owner.as_slice()], store);
-    let mut owner_store = TypedStoreMut::attach(&mut owner_store);
-
-    owner_store.store(spender.as_slice(), &allowance)
 }
 
 // Viewing Keys
