@@ -130,6 +130,9 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
 
         // Other
         HandleMsg::ChangeAdmin { address, .. } => change_admin(deps, env, address),
+        HandleMsg::ChangeSwapAddr {
+            address, code_hash, ..
+        } => change_swap_addr(deps, env, address, code_hash),
         HandleMsg::SetContractStatus { level, .. } => set_contract_status(deps, env, level),
         HandleMsg::AddMinters { minters, .. } => add_minters(deps, env, minters),
         HandleMsg::RemoveMinters { minters, .. } => remove_minters(deps, env, minters),
@@ -300,6 +303,30 @@ fn change_admin<S: Storage, A: Api, Q: Querier>(
         messages: vec![],
         log: vec![],
         data: Some(to_binary(&HandleAnswer::ChangeAdmin { status: Success })?),
+    })
+}
+
+fn change_swap_addr<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    address: HumanAddr,
+    code_hash: String,
+) -> StdResult<HandleResponse> {
+    let mut config = Config::from_storage(&mut deps.storage);
+
+    check_if_admin(&config, &env.message.sender)?;
+
+    let mut consts = config.constants()?;
+    consts.swap_addr = address;
+    consts.swap_code_hash = code_hash;
+    config.set_constants(&consts)?;
+
+    Ok(HandleResponse {
+        messages: vec![],
+        log: vec![],
+        data: Some(to_binary(&HandleAnswer::ChangeSwapAddr {
+            status: Success,
+        })?),
     })
 }
 
