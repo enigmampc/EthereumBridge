@@ -75,7 +75,11 @@ class EthEgressLeader(EgressLeader):
         else:
             fee = 1
 
-        checksum_addr = w3.toChecksumAddress(swap_event.recipient)
+        try:
+            checksum_addr = w3.toChecksumAddress(swap_event.recipient)
+        except ValueError as e:
+            self.logger.info(f'swap {swap_event.id} failed because of an invalid recipient: {swap_event.recipient!r}')
+            raise SwapFailed(swap_event)
         data = self._erc20_interface.encodeABI(fn_name='transfer', args=[checksum_addr, swap_event.amount - fee])
         native_amount = 0  # no native funds
 
