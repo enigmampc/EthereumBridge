@@ -57,7 +57,7 @@ def create_unsigned_tx(
         '--enclave-key', enclave_key,
         '--code-hash', code_hash,
         '--from', multisig_acc_addr,
-        '--gas', '200000'
+        '--gas', '310000'
     ]
     return run_secret_cli(cmd)
 
