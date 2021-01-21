@@ -133,7 +133,7 @@ def run_bridge():
     with database(uri):
         entities = []
         entities += get_ethereum_entities(logger)
-        entities += get_cosmos_entities(logger)
+        # entities += get_cosmos_entities(logger)
 
         run_all(entities)
 
