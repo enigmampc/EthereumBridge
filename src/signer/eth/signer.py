@@ -54,6 +54,8 @@ class EtherSigner(Thread):
 
         from_block = self.choose_starting_block()
 
+        self.logger.info(f'Catching up from block: {from_block}')
+
         self.event_listener.register(self.signer.sign, ['Submission'], from_block=from_block)
         self.event_listener.start()
         while not self.stop_event.is_set():
@@ -73,4 +75,4 @@ class EtherSigner(Thread):
         if obj.nonce == -1:
             obj.update(nonce=self.config.eth_start_block)
             return self.config.eth_start_block
-        return obj.nonce
+        return obj.nonce + 1

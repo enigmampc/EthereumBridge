@@ -82,8 +82,10 @@ class EtherLeader(Thread):
         self.logger.info("Starting")
 
         # todo: fix so tracker doesn't start from 0
-        self.event_listener.register(self.confirmer.withdraw, ['Withdraw'], from_block=0)
-        self.event_listener.register(self.confirmer.failed_withdraw, ['WithdrawFailure'], from_block=0)
+        from_block = SwapTrackerObject.get_or_create(src="Ethereum").nonce
+
+        self.event_listener.register(self.confirmer.withdraw, ['Withdraw'], from_block=from_block)
+        self.event_listener.register(self.confirmer.failed_withdraw, ['WithdrawFailure'], from_block=from_block)
         self.event_listener.start()
 
         self._scan_swap()
