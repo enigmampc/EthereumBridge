@@ -32,7 +32,7 @@ class MainHandler(tornado.web.RequestHandler):
         try:
             config = self.threads[0].config
             balance = w3.eth.getBalance(config.eth_address, "latest")
-            health.update({"eth-balance": w3.fromWei(balance, 'ether')})
+            health.update({"eth-balance": str(w3.fromWei(balance, 'ether'))})
         except Exception as e:
             health.update({"eth-balance": "failed to update"})
 
