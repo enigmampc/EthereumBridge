@@ -31,9 +31,15 @@ class Coin(Enum):
     ReserveRights = auto()
     Sushi = auto()
     DefiPulseIndex = auto()
+    WSCRT = auto()
 
 
 erc20_db = {
+    "0x2b89bf8ba858cd2fcee1fada378d5cd6936968be": {
+        "symbol": "WSCRT",
+        "decimal": 6,
+        "coin": Coin.WSCRT
+    },
     "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b": {
         "symbol": "DPI",
         "decimal": 18,

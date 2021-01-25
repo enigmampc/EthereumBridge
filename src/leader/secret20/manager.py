@@ -77,7 +77,7 @@ class SecretManager(Thread):
         self.logger.info("Done catching up")
 
         while not self.stop_signal.is_set():
-            for transaction in Swap.objects(status=Status.SWAP_RETRY, dst_network="Secret"):
+            for transaction in Swap.objects(status=Status.SWAP_RETRY, src_network="Ethereum"):
                 self._retry(transaction)
 
             for transaction in Swap.objects(status=Status.SWAP_UNSIGNED):

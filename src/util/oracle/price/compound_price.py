@@ -14,7 +14,10 @@ class CompoundPriceOracle(PriceSourceBase):
     coin_map = {Coin.Zrx: "ZRX",
                 Coin.Compound: "COMP",
                 Coin.Ethereum: "ETH",
-                Coin.Dai: "DAI"}
+                Coin.Dai: "DAI",
+                # Coin.Uniswap: "UNI",
+                Coin.Link: "LINK",
+                }
 
     currency_map = {Currency.USD: "usd"}
 

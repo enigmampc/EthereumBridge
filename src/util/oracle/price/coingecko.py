@@ -34,7 +34,8 @@ class CoinGecko(PriceSourceBase):
         Coin.RENBTC: "0xeb4c2781e4eba804ce9a9803c67d0893436bb27d",
         Coin.USDC: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         Coin.REN: "0x408e41876cccdc0f92210600ef50372656052a38",
-        Coin.DefiPulseIndex: "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b"
+        Coin.DefiPulseIndex: "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b",
+        Coin.WSCRT: "secret"
     }
 
     currency_map = {Currency.USD: "usd"}
