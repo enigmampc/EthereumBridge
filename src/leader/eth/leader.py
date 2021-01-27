@@ -127,6 +127,9 @@ class EtherLeader(Thread):
         else:
             fee = 1
 
+        if fee >= amount:
+            raise ValueError
+
         tx_dest = dest_address
         # use address(0) for native ethereum swaps
         tx_token = '0x0000000000000000000000000000000000000000'
@@ -151,6 +154,9 @@ class EtherLeader(Thread):
         else:
             fee = 1
 
+        if fee >= amount:
+            raise ValueError
+
         checksum_addr = w3.toChecksumAddress(dest_address)
         data = self.erc20.encodeABI(fn_name='transfer', args=[checksum_addr, amount - fee])
         tx_dest = dst_token
@@ -168,14 +174,21 @@ class EtherLeader(Thread):
         self.logger.info(f'{swap_json}')
         amount = int(swap_json['amount'])
 
-        if dst_token == 'native':
-            data, tx_dest, tx_amount, tx_token, fee = self._tx_native_params(amount, dest_address)
-        else:
-            self.erc20.address = dst_token
-            data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token)
+        swap_failed = False
+        fee = 0
+        data = b''
+        try:
+            if dst_token == 'native':
+                data, tx_dest, tx_amount, tx_token, fee = self._tx_native_params(amount, dest_address)
+            else:
+                self.erc20.address = dst_token
+                data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token)
 
-        if not self._validate_fee(amount, fee):
-            self.logger.error("Tried to swap an amount too low to cover fee")
+        except ValueError:
+            swap_failed = True
+
+        if swap_failed or not self._validate_fee(amount, fee):
+            self.logger.error(f"Tried to swap an amount too low to cover fee for swap with hash {swap_id}")
             swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
                         dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
                         status=Status.SWAP_FAILED)
