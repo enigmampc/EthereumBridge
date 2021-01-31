@@ -15,7 +15,7 @@ from src.db.collections.eth_swap import Swap, Status
 from src.db.collections.swaptrackerobject import SwapTrackerObject
 from src.db.collections.token_map import TokenPairing
 from src.leader.eth.eth_confirmationer import EthConfirmer
-from src.util.coins import Erc20Info, Coin
+from src.util.coins import CoinHandler
 from src.util.common import Token
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
@@ -40,7 +40,6 @@ class EtherLeader(Thread):
         self,
         multisig_wallet: MultisigWallet,
         signer: CryptoManagerBase,
-        dst_network: str,
         config: Config,
         **kwargs
     ):
@@ -48,15 +47,10 @@ class EtherLeader(Thread):
         self.multisig_wallet = multisig_wallet
         self.erc20 = erc20_contract()
         self.pending_txs: List[str] = []
-        token_map = {}
-        confirmer_token_map = {}
-        pairs = TokenPairing.objects(dst_network=dst_network, src_network=self.network)
-        for pair in pairs:
-            token_map.update({pair.dst_address: Token(pair.src_address, pair.src_coin)})
-            confirmer_token_map.update({pair.src_address: Token(pair.dst_address, pair.dst_coin)})
-        self.signer = signer
-        self.token_map = token_map
+        self.token_map = {}
 
+        self.signer = signer
+        self._coins = CoinHandler()
         self.logger = get_logger(
             db_name=config.db_name,
             loglevel=config.log_level,
@@ -64,11 +58,19 @@ class EtherLeader(Thread):
         )
         self.stop_event = Event()
 
-        self.confirmer = EthConfirmer(self.multisig_wallet, confirmer_token_map, self.logger)
-        self.event_listener = EthEventListener(self.multisig_wallet, config)
-
-        self.stop_event = Event()
+        self.threads = {
+            'confirmer': EthConfirmer(self.multisig_wallet, self.logger),
+            'events': EthEventListener(self.multisig_wallet, config)
+        }
         super().__init__(group=None, name="EtherLeader", target=self.run, **kwargs)
+
+    @property
+    def event_listener(self):
+        return self.threads['events']
+
+    @property
+    def confirmer(self):
+        return self.threads['confirmer']
 
     def running(self):
         return self.is_alive() and self.event_listener.is_alive()
@@ -90,10 +92,24 @@ class EtherLeader(Thread):
 
         self._scan_swap()
 
+    def _refresh_token_map(self):
+        token_map = {}
+        pairs = TokenPairing.objects(src_network=self.network)
+        for pair in pairs:
+            token_map.update({pair.dst_address: Token(pair.src_address, pair.src_coin)})
+
+        self.token_map = token_map
+
     def _scan_swap(self):
         """ Scans secret network contract for swap events """
         self.logger.info(f'Starting for account {self.signer.address} with tokens: {self.token_map=}')
         while not self.stop_event.is_set():
+
+            num_of_tokens = TokenPairing.objects(src_network=self.network).count()
+            if num_of_tokens != len(self.token_map.keys()):
+                self._refresh_token_map()
+                self.logger.info(f'Refreshed tracked tokens. Now tracking {len(self.token_map.keys())} tokens')
+
             for token in self.token_map:
                 try:
                     swap_tracker = SwapTrackerObject.get_or_create(src=token)
@@ -140,8 +156,8 @@ class EtherLeader(Thread):
 
     def _tx_erc20_params(self, amount, dest_address, dst_token: str) -> Tuple[bytes, str, int, str, int]:
         if self.config.network == "mainnet":
-            decimals = Erc20Info.decimals(dst_token.lower())
-            x_rate = BridgeOracle.x_rate(Coin.Ethereum, Erc20Info.coin(dst_token.lower()))
+            decimals = self._coins.decimals(dst_token)
+            x_rate = BridgeOracle.x_rate('ETH', self._coins.coin(dst_token))
             self.logger.info(f'Calculated exchange rate: {x_rate=}')
             gas_price = BridgeOracle.gas_price()
             fee = BridgeOracle.calculate_fee(self.multisig_wallet.SUBMIT_GAS,
@@ -208,6 +224,9 @@ class EtherLeader(Thread):
         swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
                     dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
                     status=Status.SWAP_FAILED)
+        self._broadcast_and_save(msg, swap, swap_id)
+
+    def _broadcast_and_save(self, msg: message.Submit, swap: Swap, swap_id: str):
         try:
             tx_hash = self._broadcast_transaction(msg)
             swap.dst_tx_hash = tx_hash

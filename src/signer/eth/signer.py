@@ -1,9 +1,11 @@
 from threading import Thread, Event
 from time import sleep
 
+
 from src.contracts.ethereum.event_listener import EthEventListener
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.db.collections.swaptrackerobject import SwapTrackerObject
+
 from src.signer.eth.impl import EthSignerImpl, signer_id
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
@@ -29,7 +31,6 @@ class EtherSigner(Thread):
         self,
         contract: MultisigWallet,
         signer: CryptoManagerBase,
-        dst_network: str,
         config: Config,
         **kwargs
     ):
@@ -41,7 +42,7 @@ class EtherSigner(Thread):
             logger_name=config.logger_name or f"{self.__class__.__name__}-{self.account[0:5]}"
         )
         self.config = config
-        self.signer = EthSignerImpl(contract, signer, dst_network, config)
+        self.signer = EthSignerImpl(contract, signer, config)
 
         super().__init__(group=None, name=f"{self.__class__.__name__}-{self.account[0:5]}", target=self.run, **kwargs)
         self.setDaemon(True)  # so tests don't hang
@@ -72,7 +73,7 @@ class EtherSigner(Thread):
     def choose_starting_block(self) -> int:
         """Returns the block from which we start scanning Ethereum for new tx"""
         obj = SwapTrackerObject.get_or_create(src=signer_id(self.account))
-        if obj.nonce == -1:
+        if self.config.eth_start_block > obj.nonce:
             obj.update(nonce=self.config.eth_start_block)
             return self.config.eth_start_block
         return obj.nonce + 1

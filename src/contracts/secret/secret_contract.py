@@ -3,6 +3,10 @@ import json
 from typing import Dict
 
 
+def add_token(token: str, code_hash: str, min_amount: int) -> Dict:
+    return {"add_token": {"address": token, "code_hash": code_hash, "minimum_amount": str(min_amount)}}
+
+
 def mint_json(amount: str, tx_hash, address: str, token: str) -> Dict:
     return {"mint_from_ext_chain": {"amount": amount, "address": address, "identifier": tx_hash, "token": token}}
 

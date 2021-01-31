@@ -70,6 +70,7 @@ class EthEventListener(EventProvider):
             try:
                 self.logger.debug(f'Scanning for new events of type {self.events}')
                 for name, event in self.get_new_events():
+                    print("ahola")
                     self.logger.info(f"New event found {name}, adding to confirmation handler")
                     self.pending_events.append((name, event))
                 for name, event in self.confirmation_handler():
@@ -97,7 +98,8 @@ class EthEventListener(EventProvider):
         event = getattr(self.tracked_contract.contract.events, event_name)
         evt_filter = event.createFilter(fromBlock=from_block, toBlock=to_block)
         for event in evt_filter.get_all_entries():
-            self.pending_events.append((event_name, event))
+            if from_block != 'latest' and from_block < event.blockNumber < to_block:
+                self.pending_events.append((event_name, event))
 
     def wait_for_block(self, number: int) -> int:
         while True:

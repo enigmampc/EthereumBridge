@@ -8,15 +8,14 @@ import src.contracts.ethereum.message as message
 from src.contracts.ethereum.ethr_contract import broadcast_transaction
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import swap_query_res
-from src.db.collections.token_map import TokenPairing
-from src.util.common import Token
+from src.db.collections.swaptrackerobject import SwapTrackerObject
+from src.util.coins import CoinHandler
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
 from src.util.logger import get_logger
 from src.util.oracle.oracle import BridgeOracle
 from src.util.secretcli import query_scrt_swap
 from src.util.web3 import erc20_contract, w3
-from src.db.collections.swaptrackerobject import SwapTrackerObject
 
 
 def signer_id(account):
@@ -43,7 +42,6 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         self,
         multisig_contract: MultisigWallet,
         signer: CryptoManagerBase,
-        dst_network: str,
         config: Config
     ):
         # todo: simplify this, pylint is right
@@ -60,12 +58,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         self.erc20 = erc20_contract()
         self.catch_up_complete = False
 
-        self.token_map = {}
-        pairs = TokenPairing.objects(dst_network=dst_network, src_network=self.network)
-        for pair in pairs:
-            self.token_map.update({pair.src_address: Token(pair.dst_address, pair.dst_coin)})
-
-        self.tracked_tokens = self.token_map.keys()
+        self.coins = CoinHandler()
 
     def _check_remaining_funds(self):
         remaining_funds = w3.eth.getBalance(self.account)
@@ -118,15 +111,13 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         nonce = submission_data['nonce']
         token = submission_data['token']
 
-        # todo: validate fee
-
         try:
             if token == '0x0000000000000000000000000000000000000000':
-                self.logger.info("Testing secret-ETH to ETH swap")
-                swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.token_map['native'].address)
+                # self.logger.info("Testing secret-ETH to ETH swap")
+                swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address('native'))
             else:
-                self.logger.info(f"Testing {self.token_map[token].address} to {token} swap")
-                swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.token_map[token].address)
+                # self.logger.info(f"Testing {self.token_map[token].address} to {token} swap")
+                swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address(token))
         except subprocess.CalledProcessError as e:
             self.logger.error(f'Error querying transaction: {e}')
             raise RuntimeError from None

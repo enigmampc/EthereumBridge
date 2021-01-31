@@ -1,11 +1,12 @@
 import json
 from collections import namedtuple
 from threading import Thread, Event
-from typing import Dict
-
+from typing import Dict, Union
+from mongoengine import signals
 from mongoengine import OperationError
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
+from src.db.collections.commands import Commands
 from src.db.collections.eth_swap import Swap, Status
 from src.db.collections.signatures import Signatures
 from src.util.common import temp_file
@@ -32,7 +33,7 @@ class Secret20Signer(Thread):
         super().__init__(group=None, name=f"SecretSigner-{self.multisig.name}", target=self.run, **kwargs)
         self.setDaemon(True)  # so tests don't hang
         self.account_num, _ = self._account_details()
-        # signals.post_init.connect(self._tx_signal, sender=ETHSwap)  # TODO: test this with deployed db on machine
+        signals.post_save.connect(self._sign_add_token, sender=Commands)
 
     def running(self):
         return self.is_alive()
@@ -64,6 +65,18 @@ class Secret20Signer(Thread):
                     failed = True
             self.stop_event.wait(self.config.sleep_interval)
 
+    def _validate_and_sign_command(self, tx: Commands):
+        """
+        Makes sure that the tx is valid and signs it
+
+        :raises: ValueError
+        """
+        if self._is_signed(tx):
+            self.logger.debug(f"This signer already signed this transaction. Waiting for other signers... id:{tx.id}")
+            return
+
+        self.sign(tx)
+
     def _validate_and_sign(self, tx: Swap):
         """
         Makes sure that the tx is valid and signs it
@@ -80,22 +93,32 @@ class Secret20Signer(Thread):
             tx.save()
             raise ValueError
 
+        self.sign(tx)
+
+    def sign(self, tx: Union[Commands, Swap]):
         try:
             signed_tx = self._sign_with_secret_cli(tx.unsigned_tx, tx.sequence)
         except RuntimeError as e:
             tx.status = Status.SWAP_FAILED
             tx.save()
             raise ValueError from e
-
         try:
             Signatures(tx_id=tx.id, signer=self.multisig.name, signed_tx=signed_tx).save()
         except OperationError as e:
             self.logger.error(f'Failed to save tx in database: {tx}')
             raise ValueError from e
 
-    def _is_signed(self, tx: Swap) -> bool:
+    def _is_signed(self, tx: Union[Swap, Commands]) -> bool:
         """ Returns True if tx was already signed by us, else False """
         return Signatures.objects(tx_id=tx.id, signer=self.multisig.name).count() > 0
+
+    def _sign_add_token(self, sender, document: Commands):  # pylint: disable=unused-argument
+        decrypted_data = self.decrypt_tx(document)
+
+        if not decrypted_data['add_token']:
+            self.logger.error('Tried to get a signature for a different command than add_token!')
+        else:
+            self._validate_and_sign_command(document)
 
     def _is_valid(self, tx: Swap) -> bool:
         """Assert that the data in the unsigned_tx matches the tx on the chain"""
@@ -104,13 +127,7 @@ class Secret20Signer(Thread):
             return False
 
         try:
-            unsigned_tx = json.loads(tx.unsigned_tx)
-
-            res = self._decrypt(unsigned_tx)
-            self.logger.debug(f'Decrypted unsigned tx successfully {res}')
-            json_start_index = res.find('{')
-            json_end_index = res.rfind('}') + 1
-            decrypted_data = json.loads(res[json_start_index:json_end_index])
+            decrypted_data = self.decrypt_tx(tx)
 
         except json.JSONDecodeError:
             self.logger.error(f'Tried to load tx with hash: {tx.src_tx_hash} {tx.id}'
@@ -148,6 +165,15 @@ class Secret20Signer(Thread):
             return False
 
         return True
+
+    def decrypt_tx(self, tx: Union[Commands, Swap]):
+        unsigned_tx = json.loads(tx.unsigned_tx)
+        res = self._decrypt(unsigned_tx)
+        self.logger.debug(f'Decrypted unsigned tx successfully {res}')
+        json_start_index = res.find('{')
+        json_end_index = res.rfind('}') + 1
+        decrypted_data = json.loads(res[json_start_index:json_end_index])
+        return decrypted_data
 
     def _sign_with_secret_cli(self, unsigned_tx: str, sequence: int) -> str:
         with temp_file(unsigned_tx) as unsigned_tx_path:
