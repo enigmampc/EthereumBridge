@@ -7,6 +7,7 @@ RUN apt-get -qq -y update && \
         nano \
         git \
         make \
+        curl \
         sudo \
         python3-pip \
         bash-completion && \
@@ -21,17 +22,15 @@ RUN cp ./secretcli /usr/bin
 
 RUN apt-get install -y softhsm
 
-RUN pip3 install supervisor
-
 WORKDIR EthereumBridge/
 
 COPY requirements.txt requirements.txt
 
 RUN pip3 install -r requirements.txt
 
-COPY . .
+COPY src/ src/
+COPY config/ config/
 
-COPY deployment/config/supervisord.conf /etc/supervisor/supervisord.conf
 COPY deployment/config/softhsm2.conf /etc/softhsm/softhsm2.conf
 
-ENTRYPOINT supervisord -c /etc/supervisor/supervisord.conf
+ENTRYPOINT python3 -m src.bridge

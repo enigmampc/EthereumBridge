@@ -1,11 +1,12 @@
+import os
 from collections import ChainMap
 from functools import reduce
 from threading import Thread
 from typing import List, Optional, Awaitable, Tuple
 
 import tornado.ioloop
-import tornado.web
 import tornado.options
+import tornado.web
 
 from src.contracts.secret.secret_contract import add_token
 from src.db.collections.commands import Commands
@@ -15,7 +16,6 @@ from src.leader.secret20 import Secret20Leader
 from src.signer.eth.signer import EtherSigner
 from src.signer.secret20 import Secret20Signer
 from src.util.secretcli import create_unsigned_tx
-
 from src.util.web3 import w3
 
 
@@ -35,8 +35,8 @@ def get_health(threads: Tuple[EtherSigner, Secret20Signer, Optional[EtherLeader]
 
 class MainHandler(tornado.web.RequestHandler):
     def __init__(self, application, request, **kwargs):
-        super().__init__(application, request, **kwargs)
         self.threads: None = None
+        super().__init__(application, request, **kwargs)
 
     def initialize(self, threads):
         self.threads: Tuple[EtherSigner, Secret20Signer, Optional[EtherLeader], Optional[Secret20Leader]] = threads
@@ -53,8 +53,8 @@ class MainHandler(tornado.web.RequestHandler):
 
 class HealthSimpleHandler(tornado.web.RequestHandler):
     def __init__(self, application, request, **kwargs):
-        super().__init__(application, request, **kwargs)
         self.threads: None = None
+        super().__init__(application, request, **kwargs)
 
     def initialize(self, threads):
         self.threads: Tuple[EtherSigner, Secret20Signer, Optional[EtherLeader], Optional[Secret20Leader]] = threads
@@ -72,8 +72,8 @@ class HealthSimpleHandler(tornado.web.RequestHandler):
 
 class CommandHandler(tornado.web.RequestHandler):
     def __init__(self, application, request, **kwargs):
-        super().__init__(application, request, **kwargs)
         self.threads: None = None
+        super().__init__(application, request, **kwargs)
 
     def initialize(self, threads):
         self.threads: Tuple[EtherSigner, Secret20Signer, Optional[EtherLeader], Optional[Secret20Leader]] = threads
@@ -83,7 +83,12 @@ class CommandHandler(tornado.web.RequestHandler):
 
     def get(self):
         if len(self.threads) < 4:
-            return
+            raise tornado.web.HTTPError(status_code=400)
+
+        key = self.get_argument('key')
+
+        if key != os.getenv('BRIDGE_API_KEY'):
+            raise tornado.web.HTTPError(status_code=401)
 
         token = self.get_argument('token')
         min_amount = int(self.get_argument('min_amount'))
@@ -111,6 +116,21 @@ class CommandHandler(tornado.web.RequestHandler):
         self.threads[3].manager.sequence += 1
 
 
+# class TestHandler(tornado.web.RequestHandler):
+#     def __init__(self, application, request, **kwargs):
+#         self.threads: None = None
+#         super().__init__(application, request, **kwargs)
+#
+#     def initialize(self, threads):
+#         self.threads: Tuple[EtherSigner, Secret20Signer, Optional[EtherLeader], Optional[Secret20Leader]] = threads
+#
+#     def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
+#         pass
+#
+#     def get(self):
+#         self.threads[0].stop()
+
+
 def make_app(threads):
 
     for t in threads:
@@ -118,8 +138,9 @@ def make_app(threads):
 
     return tornado.web.Application([
         (r"/health", MainHandler, dict(threads=threads)),
-        (r"/health_simple", MainHandler, dict(threads=threads)),
+        (r"/health_simple", HealthSimpleHandler, dict(threads=threads)),
         (r"/add_token", CommandHandler, dict(threads=threads)),
+        # (r"/test", TestHandler, dict(threads=threads)),
     ])
 
 
