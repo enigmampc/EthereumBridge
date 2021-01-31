@@ -112,7 +112,7 @@ class Secret20Signer(Thread):
         """ Returns True if tx was already signed by us, else False """
         return Signatures.objects(tx_id=tx.id, signer=self.multisig.name).count() > 0
 
-    def _sign_add_token(self, sender, document: Commands):  # pylint: disable=unused-argument
+    def _sign_add_token(self, sender, document: Commands, **kwargs):  # pylint: disable=unused-argument
         decrypted_data = self.decrypt_tx(document)
 
         if not decrypted_data['add_token']:
