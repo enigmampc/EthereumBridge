@@ -200,11 +200,19 @@ class EtherLeader(Thread):
                 self.erc20.address = dst_token
                 data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token)
 
+            msg = message.Submit(w3.toChecksumAddress(tx_dest),
+                                 tx_amount,  # if we are swapping token, no ether should be rewarded
+                                 int(swap_json['nonce']),
+                                 tx_token,
+                                 fee,
+                                 data)
+
         except ValueError:
             swap_failed = True
 
         if swap_failed or not self._validate_fee(amount, fee):
-            self.logger.error(f"Tried to swap an amount too low to cover fee for swap with hash {swap_id}")
+            self.logger.error(f"Swap failed. Check that amount is not too low to cover fee "
+                              f"and that destination address is valid: {swap_id}")
             swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
                         dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
                         status=Status.SWAP_FAILED)
@@ -213,13 +221,6 @@ class EtherLeader(Thread):
             except (DuplicateKeyError, NotUniqueError):
                 pass
             return
-
-        msg = message.Submit(w3.toChecksumAddress(tx_dest),
-                             tx_amount,  # if we are swapping token, no ether should be rewarded
-                             int(swap_json['nonce']),
-                             tx_token,
-                             fee,
-                             data)
 
         swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
                     dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
