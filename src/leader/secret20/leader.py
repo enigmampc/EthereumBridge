@@ -1,17 +1,17 @@
 import json
 from datetime import datetime
 from threading import Thread, Event
-from typing import List
+from typing import List, Union
 
 from mongoengine import OperationError
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
+from src.db.collections.commands import Commands
 from src.db.collections.eth_swap import Swap, Status
 from src.db.collections.signatures import Signatures
-from src.db.collections.token_map import TokenPairing
 from src.leader.secret20.manager import SecretManager
 from src.signer.secret20.signer import SecretAccount
-from src.util.common import temp_file, temp_files, Token
+from src.util.common import temp_file, temp_files
 from src.util.config import Config
 from src.util.logger import get_logger
 from src.util.secretcli import broadcast, multisig_tx, query_data_success, get_uscrt_balance
@@ -33,20 +33,14 @@ class Secret20Leader(Thread):
         self,
         secret_multisig: SecretAccount,
         contract: MultisigWallet,
-        src_network: str,
         config: Config,
         *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
 
-        token_map = {}
-        pairs = TokenPairing.objects(dst_network=self.network, src_network=src_network)
-        for pair in pairs:
-            token_map.update({pair.src_address: Token(pair.dst_address, pair.dst_coin)})
-
         self.multisig_name = secret_multisig.name
         self.config = config
-        self.manager = SecretManager(contract, token_map, secret_multisig, config)
+        self.manager = SecretManager(contract, secret_multisig, config)
         self.logger = get_logger(
             db_name=config.db_name,
             loglevel=config.log_level,
@@ -78,6 +72,9 @@ class Secret20Leader(Thread):
     def _scan_swap(self):
         while not self.stop_event.is_set():
             failed_prev = False
+            for tx in Commands.objects(status=Status.SWAP_SIGNED):
+                self._create_and_broadcast(tx)
+
             for tx in Swap.objects(status=Status.SWAP_SIGNED, src_network="Ethereum"):
                 # if there are 2 transactions that depend on each other (sequence number), and the first fails we mark
                 # the next as "retry"
@@ -99,7 +96,7 @@ class Secret20Leader(Thread):
             self.logger.debug('done scanning for swaps. sleeping..')
             self.stop_event.wait(self.config.sleep_interval)
 
-    def _create_and_broadcast(self, tx: Swap) -> bool:
+    def _create_and_broadcast(self, tx: Union[Swap, Commands]) -> bool:
         # reacts to signed tx in the DB that are ready to be sent to secret20
         signatures = [signature.signed_tx for signature in Signatures.objects(tx_id=tx.id)]
         if len(signatures) < self.config.signatures_threshold:  # sanity check

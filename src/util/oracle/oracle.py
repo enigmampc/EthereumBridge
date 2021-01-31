@@ -8,17 +8,16 @@ from src.util.oracle.gas.zoltu_gas_oracle import ZoltuGasOracle
 from src.util.oracle.price.coingecko import CoinGecko
 from .gas_source_base import GasSourceBase
 from .price.binance_price import BinancePriceOracle
-from .price.compound_price import CompoundPriceOracle
 from .price_source_base import PriceSourceBase
-from ..coins import Currency, Coin
+from ..coins import Currency
 
 
 class Oracle:
-    price_sources: List[PriceSourceBase] = [CoinGecko(), CompoundPriceOracle(), BinancePriceOracle()]
+    price_sources: List[PriceSourceBase] = [CoinGecko(), BinancePriceOracle()]  # CompoundPriceOracle(),
     gas_sources: List[GasSourceBase] = [EtherchainGasOracle(), EthGasStation(), ZoltuGasOracle(), POAGasOracle()]
 
     @staticmethod
-    async def _get_price_from_source(source: PriceSourceBase, coin: Coin, currency: Currency) -> float:
+    async def _get_price_from_source(source: PriceSourceBase, coin: str, currency: Currency) -> float:
         try:
             return await source.price(coin, currency)
         except Exception:  # pylint: disable=broad-except
@@ -28,13 +27,13 @@ class Oracle:
     async def _get_gas_price_from_source(source: GasSourceBase) -> int:
         return await source.gas_price()
 
-    async def _price(self, coin: Coin, currency: Currency) -> float:
+    async def _price(self, coin: str, currency: Currency) -> float:
         prices = await asyncio.gather(*(self._get_price_from_source(source, coin, currency)
-                                        for source in self.price_sources if coin in source.supported_tokens()))
+                                        for source in self.price_sources))
 
         filtered = list(filter(lambda p: p, prices))
 
-        if not len(filtered):
+        if not filtered:
             raise ValueError(f"Failed to get prices for coin: {coin}")
 
         average = sum(filtered) / len(filtered)
@@ -46,7 +45,7 @@ class Oracle:
         average = sum(prices) / len(prices)
         return int(average)
 
-    def price(self, coin: Coin, currency: Currency) -> float:
+    def price(self, coin: str, currency: Currency) -> float:
         # aiohttp displays an error on windows, but we can ignore it, or switch to
         # asyncio.get_event_loop().run_until_complete(
         # https://github.com/aio-libs/aiohttp/issues/4324
@@ -60,7 +59,7 @@ class Oracle:
         task = asyncio.run(self._gas_price())
         return task
 
-    def x_rate(self, coin_primary: Coin, coin_secondary: Coin) -> float:
+    def x_rate(self, coin_primary: str, coin_secondary: str) -> float:
         try:
             return self.price(coin_primary, Currency.USD) / self.price(coin_secondary, Currency.USD)
         except ZeroDivisionError:

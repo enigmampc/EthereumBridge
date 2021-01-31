@@ -10,7 +10,7 @@ from src.leader.secret20 import Secret20Leader
 from src.signer.eth.signer import EtherSigner
 from src.signer.secret20 import Secret20Signer
 from src.signer.secret20.signer import SecretAccount
-from src.util.common import Token, bytes_from_hex
+from src.util.common import bytes_from_hex
 from src.util.config import config
 from src.util.crypto_store.local_crypto_store import LocalCryptoStore
 from src.util.crypto_store.pkcs11_crypto_store import Pkcs11CryptoStore
@@ -51,17 +51,17 @@ def run_bridge():  # pylint: disable=too-many-statements
         eth_wallet = MultisigWallet(w3, config.multisig_wallet_address)
         secret_account = SecretAccount(config.multisig_acc_addr, config.secret_key_name)
 
-        eth_signer = EtherSigner(eth_wallet, signer, dst_network="Secret", config=config)
+        eth_signer = EtherSigner(eth_wallet, signer, config=config)
         s20_signer = Secret20Signer(secret_account, eth_wallet, config)
 
         runners.append(eth_signer)
         runners.append(s20_signer)
 
         if config.mode.lower() == 'leader':
-            eth_leader = EtherLeader(eth_wallet, signer, dst_network="Secret", config=config)
+            eth_leader = EtherLeader(eth_wallet, signer, config=config)
 
             secret_leader = SecretAccount(config.multisig_acc_addr, config.multisig_key_name)
-            s20_leader = Secret20Leader(secret_leader, eth_wallet, src_network="Ethereum", config=config)
+            s20_leader = Secret20Leader(secret_leader, eth_wallet, config=config)
 
             runners.append(eth_leader)
             runners.append(s20_leader)

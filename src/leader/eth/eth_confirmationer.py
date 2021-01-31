@@ -1,12 +1,11 @@
 from logging import Logger
-from typing import Dict
 
 from web3.datastructures import AttributeDict
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.db.collections.eth_swap import Swap, Status
 from src.db.collections.swaptrackerobject import SwapTrackerObject
-from src.util.common import Token
+from src.util.coins import CoinHandler
 
 
 def build_hash(nonce, token):
@@ -15,10 +14,10 @@ def build_hash(nonce, token):
 
 class EthConfirmer:
 
-    def __init__(self, multisig_contract: MultisigWallet, token_map: Dict[str, Token], logger: Logger):
+    def __init__(self, multisig_contract: MultisigWallet, logger: Logger):
         self.multisig_contract = multisig_contract
-        self.token_map = token_map
         self.logger = logger
+        self.coins = CoinHandler()
 
     def withdraw(self, event: AttributeDict):
         self._handle(event, True)
@@ -33,9 +32,9 @@ class EthConfirmer:
         token = data['token']
 
         if token == '0x0000000000000000000000000000000000000000':
-            scrt_token = self.token_map['native'].address
+            scrt_token = self.coins.scrt_address('native')
         else:
-            scrt_token = self.token_map[token].address
+            scrt_token = self.coins.scrt_address(token)
 
         self._set_tx_result(nonce, scrt_token, success=success)
 

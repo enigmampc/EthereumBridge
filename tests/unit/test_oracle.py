@@ -1,11 +1,11 @@
-from src.util.coins import Currency, Coin
+from src.util.coins import Currency
 from src.util.oracle.oracle import Oracle
 
 
 def test_price_oracle():
     oracle = Oracle()
 
-    coin = Coin.BAC
+    coin = 'GRO'
     currency = Currency.USD
 
     price = oracle.price(coin, currency)

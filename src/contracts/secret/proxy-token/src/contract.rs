@@ -403,6 +403,8 @@ fn try_add_receiver_api_callback<S: ReadonlyStorage>(
         let callback_msg = receiver_msg.into_cosmos_msg(receiver_hash, recipient.clone())?;
 
         messages.push(callback_msg);
+    } else {
+        return Err(StdError::not_found("Receiver not found for this recipient"));
     }
     Ok(())
 }

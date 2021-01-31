@@ -231,7 +231,7 @@ def ethr_signers(multisig_wallet, configuration: Config, ether_accounts, erc20_t
         private_key = acc.key
         address = acc.address
         signer = LocalCryptoStore(private_key=private_key, account=address)
-        res.append(EtherSigner(multisig_wallet, signer, dst_network="Secret", config=configuration))
+        res.append(EtherSigner(multisig_wallet, signer, config=configuration))
 
     yield res
 

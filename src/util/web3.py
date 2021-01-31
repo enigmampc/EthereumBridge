@@ -21,7 +21,7 @@ def web3_provider(address: str) -> Web3:
             return Web3(Web3.WebsocketProvider(address))
         return Web3(Web3.IPCProvider(address))
     except FileNotFoundError:
-        raise ValueError(f"Failed to initialize web3 provider (is eth_node set?)")
+        raise ValueError("Failed to initialize web3 provider (is eth_node set?)") from None
 
 
 w3: Web3 = web3_provider(config.eth_node)

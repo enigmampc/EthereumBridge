@@ -1,16 +1,18 @@
 from threading import Thread, Event, Lock
-from typing import Dict
+from typing import Union
 
-from web3.datastructures import AttributeDict
 from mongoengine.errors import NotUniqueError
+from web3.datastructures import AttributeDict
 
 from src.contracts.ethereum.event_listener import EthEventListener
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import mint_json
+from src.db.collections.commands import Commands
 from src.db.collections.eth_swap import Swap, Status
 from src.db.collections.signatures import Signatures
 from src.db.collections.swaptrackerobject import SwapTrackerObject
 from src.signer.secret20.signer import SecretAccount
+from src.util.coins import CoinHandler
 from src.util.common import Token
 from src.util.config import Config
 from src.util.logger import get_logger
@@ -24,13 +26,12 @@ class SecretManager(Thread):
     def __init__(
         self,
         contract: MultisigWallet,
-        token_to_secret_map: Dict[str, Token],
         s20_multisig_account: SecretAccount,
         config: Config,
         **kwargs
     ):
         self.contract = contract
-        self.s20_map = token_to_secret_map
+        self._coins = CoinHandler()
         self.config = config
         self.multisig = s20_multisig_account
         self.event_listener = EthEventListener(contract, config)
@@ -81,15 +82,22 @@ class SecretManager(Thread):
                 self._retry(transaction)
 
             for transaction in Swap.objects(status=Status.SWAP_UNSIGNED):
-                self.logger.debug(f"Checking unsigned tx {transaction.id}")
-                if Signatures.objects(tx_id=transaction.id).count() >= self.config.signatures_threshold:
-                    self.logger.info(f"Found tx {transaction.id} with enough signatures to broadcast")
-                    transaction.status = Status.SWAP_SIGNED
-                    transaction.save()
-                    self.logger.info(f"Set status of tx {transaction.id} to signed")
-                else:
-                    self.logger.debug(f"Tx {transaction.id} does not have enough signatures")
+                self.handle_unsigned_tx(transaction)
+
+            for transaction in Commands.objects(status=Status.SWAP_UNSIGNED):
+                self.handle_unsigned_tx(transaction)
+
             self.stop_signal.wait(self.config.sleep_interval)
+
+    def handle_unsigned_tx(self, transaction: Union[Commands, Swap]):
+        self.logger.debug(f"Checking unsigned tx {transaction.id}")
+        if Signatures.objects(tx_id=transaction.id).count() >= self.config.signatures_threshold:
+            self.logger.info(f"Found tx {transaction.id} with enough signatures to broadcast")
+            transaction.status = Status.SWAP_SIGNED
+            transaction.save()
+            self.logger.info(f"Set status of tx {transaction.id} to signed")
+        else:
+            self.logger.debug(f"Tx {transaction.id} does not have enough signatures")
 
     def catch_up(self, to_block: int):
         from_block = SwapTrackerObject.last_processed('Ethereum') + 1
@@ -119,7 +127,10 @@ class SecretManager(Thread):
         SwapTrackerObject.update_last_processed('Ethereum', to_block)
 
     def _get_s20(self, foreign_token_addr: str) -> Token:
-        return self.s20_map[foreign_token_addr]
+        print(f"{list(self._coins.keys())} - {foreign_token_addr}")
+        coin = self._coins.get(foreign_token_addr)
+        return Token(address=coin.scrt_address,
+                     name=coin.name)
 
     def _retry(self, tx: Swap):
         for signature in Signatures.objects(tx_id=tx.id):
@@ -162,9 +173,9 @@ class SecretManager(Thread):
             self.sequence = self.sequence + 1
             self.logger.info(f"saved new Ethereum -> Secret transaction {tx_hash}, for {amount} {s20.name}")
             # SwapTrackerObject.update_last_processed(src=Source.ETH.value, update_val=block_number)
-        except (IndexError, AttributeError) as e:
+        except (IndexError, AttributeError, KeyError) as e:
             self.logger.error(f"Failed on tx {tx_hash}, block {block_number}, "
-                              f"due to missing config: {e}")
+                              f"due to error: {e}")
         except RuntimeError as e:
             self.logger.error(f"Failed to create swap tx for eth hash {tx_hash}, block {block_number}. Error: {e}")
         except NotUniqueError as e:
