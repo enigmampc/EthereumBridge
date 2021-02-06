@@ -157,7 +157,14 @@ class EtherLeader(Thread):
     def _tx_erc20_params(self, amount, dest_address, dst_token: str) -> Tuple[bytes, str, int, str, int]:
         if self.config.network == "mainnet":
             decimals = self._coins.decimals(dst_token)
-            x_rate = BridgeOracle.x_rate('ETH', self._coins.coin(dst_token))
+            try:
+                x_rate = BridgeOracle.x_rate('ETH', self._coins.coin(dst_token))
+            except Exception:
+                self.logger.warning(f"Failed to get price for token {dst_token} - falling back to db price")
+                eth = TokenPairing.objects().get(name="Ethereum").price
+                token = TokenPairing.objects().get(src_address=dst_token).price
+                x_rate = float(eth) / float(token)
+
             self.logger.info(f'Calculated exchange rate: {x_rate=}')
             gas_price = BridgeOracle.gas_price()
             fee = BridgeOracle.calculate_fee(self.multisig_wallet.SUBMIT_GAS,
@@ -207,7 +214,8 @@ class EtherLeader(Thread):
                                  fee,
                                  data)
 
-        except ValueError:
+        except ValueError as e:
+            self.logger.error(f"Error: {e}")
             swap_failed = True
 
         if swap_failed or not self._validate_fee(amount, fee):

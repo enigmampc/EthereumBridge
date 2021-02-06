@@ -63,6 +63,17 @@ class Secret20Signer(Thread):
                 except ValueError as e:
                     self.logger.error(f'Failed to sign transaction: {tx} error: {e}')
                     failed = True
+
+            for tx in Commands.objects(status=Status.SWAP_UNSIGNED):
+
+                self.logger.info(f"Found new unsigned swap event {tx}")
+                try:
+                    self._sign_add_token(sender="", document=tx)
+                    self.logger.info(
+                        f"Signed transaction successfully id:{tx.id}")
+                except ValueError as e:
+                    self.logger.error(f'Failed to sign transaction: {tx} error: {e}')
+
             self.stop_event.wait(self.config.sleep_interval)
 
     def _validate_and_sign_command(self, tx: Commands):
@@ -77,7 +88,7 @@ class Secret20Signer(Thread):
 
         self.sign(tx)
 
-    def _validate_and_sign(self, tx: Swap):
+    def _validate_and_sign(self, tx: Union[Commands, Swap]):
         """
         Makes sure that the tx is valid and signs it
 
@@ -116,7 +127,7 @@ class Secret20Signer(Thread):
         decrypted_data = self.decrypt_tx(document)
 
         if not decrypted_data['add_token']:
-            self.logger.error('Tried to get a signature for a different command than add_token!')
+            raise ValueError('Tried to get a signature for a different command than add_token!')
         else:
             self._validate_and_sign_command(document)
 
