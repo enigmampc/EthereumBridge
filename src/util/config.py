@@ -9,12 +9,14 @@ logger = get_logger('config')
 
 global_config_paths = {"LOCAL": "local_config.json",
                        "TESTNET": "testnet_config.json",
-                       "MAINNET": "mainnet_config.json"}
+                       "MAINNET": "mainnet_config.json",
+                       "PLASM": "plasm_config.json"}
 
 
 env_defaults = {'LOCAL': './config/local_config.json',
                 'TESTNET': './config/testnet_config.json',
-                'MAINNET': './config/mainnet_config.json'}
+                'MAINNET': './config/mainnet_config.json',
+                       "PLASM": "./config/plasm_config.json"}
 
 
 __all__ = ['Config', 'config', 'get_config']

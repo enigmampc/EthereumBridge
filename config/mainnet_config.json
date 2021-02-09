@@ -12,6 +12,7 @@
   "multisig_wallet_address": "0xf4B00C937b4ec4Bb5AC051c3c719036c668a31EC",
   "scrt_swap_address": "secret1tmm5xxxe0ltg6df3q2d69dq770030a2syydc9u",
   "swap_code_hash": "60D4F9B200F68166A9C7BFAEFD86ABDBD413679B5EF4F7276178C70ACC75BB55",
+  "ethgastation_api_key": "988d6b114be7514aad5d0c912c90f60af84770393e2a07f41b278aff0bb1",
   "keys_base_path": "/root/keys",
   "secretcli_home": "/root/.secretcli",
   "eth_address": "",
