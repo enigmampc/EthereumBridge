@@ -2,8 +2,10 @@ import json
 from collections import namedtuple
 from threading import Thread, Event
 from typing import Dict, Union
-from mongoengine import signals
+
+import web3
 from mongoengine import OperationError
+from mongoengine import signals
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.db.collections.commands import Commands
@@ -46,14 +48,14 @@ class Secret20Signer(Thread):
         """Scans the db for unsigned swap tx and signs them"""
         self.logger.info("Starting..")
         while not self.stop_event.is_set():
-            failed = False
+            # failed = False
             for tx in Swap.objects(status=Status.SWAP_UNSIGNED):
 
                 # if there are 2 transactions that depend on each other (sequence number), and the first fails we mark
                 # the next as "retry"
-                if failed:
-                    tx.status = Status.SWAP_RETRY
-                    continue
+                # if failed:
+                #     # tx.status = Status.SWAP_RETRY
+                #     continue
 
                 self.logger.info(f"Found new unsigned swap event {tx}")
                 try:
@@ -62,7 +64,7 @@ class Secret20Signer(Thread):
                         f"Signed transaction successfully id:{tx.id}")
                 except ValueError as e:
                     self.logger.error(f'Failed to sign transaction: {tx} error: {e}')
-                    failed = True
+                    # failed = True
 
             for tx in Commands.objects(status=Status.SWAP_UNSIGNED):
 
@@ -100,8 +102,8 @@ class Secret20Signer(Thread):
 
         if not self._is_valid(tx):
             self.logger.error(f"Validation failed. Signer: {self.multisig.name}. Tx id:{tx.id}.")
-            tx.status = Status.SWAP_FAILED
-            tx.save()
+            # tx.status = Status.SWAP_FAILED
+            # tx.save()
             raise ValueError
 
         self.sign(tx)
@@ -133,8 +135,11 @@ class Secret20Signer(Thread):
 
     def _is_valid(self, tx: Swap) -> bool:
         """Assert that the data in the unsigned_tx matches the tx on the chain"""
-        log = self.contract.get_events_by_tx(tx.src_tx_hash)
-        if not log:  # because for some reason event_log can return None???
+        try:
+            log = self.contract.get_events_by_tx(tx.src_tx_hash)
+            if not log:  # because for some reason event_log can return None???
+                return False
+        except web3.exceptions.TransactionNotFound:
             return False
 
         try:
