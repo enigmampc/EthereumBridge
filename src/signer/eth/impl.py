@@ -8,8 +8,10 @@ import src.contracts.ethereum.message as message
 from src.contracts.ethereum.ethr_contract import broadcast_transaction
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import swap_query_res
+from src.db.collections.scrt_retry import ScrtRetry
 from src.db.collections.swaptrackerobject import SwapTrackerObject
 from src.util.coins import CoinHandler
+from src.util.common import swap_retry_address
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
 from src.util.logger import get_logger
@@ -77,7 +79,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         self.logger.info(f'Got submission event with transaction id: {transaction_id}, checking status')
 
         data = self.multisig_contract.submission_data(transaction_id)
-        # placeholder - check how this looks for ETH transactions
+
         # check if submitted tx is an ERC-20 transfer tx
         if data['amount'] == 0 and data['data']:
             _, params = self.erc20.decode_function_input(data['data'].hex())
@@ -115,6 +117,10 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
             if token == '0x0000000000000000000000000000000000000000':
                 # self.logger.info("Testing secret-ETH to ETH swap")
                 swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address('native'))
+            # elif token == swap_retry_address:
+            #     return True
+                # ScrtRetry.objects.get(id=f'{nonce}|')
+                # swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address(token))
             else:
                 # self.logger.info(f"Testing {self.token_map[token].address} to {token} swap")
                 swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address(token))

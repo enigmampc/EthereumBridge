@@ -12,17 +12,23 @@ from src.contracts.ethereum.event_listener import EthEventListener
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import swap_query_res, get_swap_id
 from src.db.collections.eth_swap import Swap, Status
+from src.db.collections.scrt_retry import ScrtRetry
 from src.db.collections.swaptrackerobject import SwapTrackerObject
 from src.db.collections.token_map import TokenPairing
 from src.leader.eth.eth_confirmationer import EthConfirmer
 from src.util.coins import CoinHandler
-from src.util.common import Token
+from src.util.common import Token, swap_retry_address
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
 from src.util.logger import get_logger
 from src.util.oracle.oracle import BridgeOracle
 from src.util.secretcli import query_scrt_swap
 from src.util.web3 import erc20_contract, w3
+
+
+def _parse_db_tx(tx: Swap) -> Tuple[str, int]:
+    token, nonce = tx.src_tx_hash.split('|')
+    return token, int(nonce)
 
 
 class EtherLeader(Thread):
@@ -100,6 +106,12 @@ class EtherLeader(Thread):
 
         self.token_map = token_map
 
+    # def _retry(self, tx: Swap):
+    #     ScrtRetry(swap=tx.id, original_contract=tx.dst_address).save()
+    #     tx.dst_address = swap_retry_address
+    #     tx.status = Status.SWAP_UNSIGNED
+    #     tx.save()
+
     def _scan_swap(self):
         """ Scans secret network contract for swap events """
         self.logger.info(f'Starting for account {self.signer.address} with tokens: {self.token_map=}')
@@ -109,6 +121,13 @@ class EtherLeader(Thread):
             if num_of_tokens != len(self.token_map.keys()):
                 self._refresh_token_map()
                 self.logger.info(f'Refreshed tracked tokens. Now tracking {len(self.token_map.keys())} tokens')
+
+            for transaction in Swap.objects(status=Status.SWAP_RETRY, src_network="Secret"):
+                # self._handle_swap(swap_data, token, self.token_map[token].address)
+                token, nonce = _parse_db_tx(transaction.src_tx_hash)
+                swap_data = query_scrt_swap(nonce, self.config.scrt_swap_address, token)
+                # self._retry(transaction)
+                self._handle_swap(swap_data, token, self.token_map[token].address)
 
             for token in self.token_map:
                 try:
@@ -188,7 +207,7 @@ class EtherLeader(Thread):
 
         return data, tx_dest, tx_amount, tx_token, fee
 
-    def _handle_swap(self, swap_data: str, src_token: str, dst_token: str):
+    def _handle_swap(self, swap_data: str, src_token: str, dst_token: str, retry=False):
         swap_json = swap_query_res(swap_data)
         # this is an id, and not the TX hash since we don't actually know where the TX happened, only the id of the
         # swap reported by the contract
@@ -200,6 +219,7 @@ class EtherLeader(Thread):
         swap_failed = False
         fee = 0
         data = b''
+        nonce = int(swap_json['nonce'])
         try:
             if dst_token == 'native':
                 data, tx_dest, tx_amount, tx_token, fee = self._tx_native_params(amount, dest_address)
@@ -207,9 +227,15 @@ class EtherLeader(Thread):
                 self.erc20.address = dst_token
                 data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token)
 
+
+
+            if retry:
+                tx_token = swap_retry_address
+                nonce = w3.
+                # getTokenNonce
             msg = message.Submit(w3.toChecksumAddress(tx_dest),
                                  tx_amount,  # if we are swapping token, no ether should be rewarded
-                                 int(swap_json['nonce']),
+                                 nonce,
                                  tx_token,
                                  fee,
                                  data)
