@@ -227,11 +227,9 @@ class EtherLeader(Thread):
                 self.erc20.address = dst_token
                 data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token)
 
-
-
             if retry:
                 tx_token = swap_retry_address
-                nonce = w3.
+                nonce = self.multisig_wallet.get_token_nonce(swap_retry_address)
                 # getTokenNonce
             msg = message.Submit(w3.toChecksumAddress(tx_dest),
                                  tx_amount,  # if we are swapping token, no ether should be rewarded
