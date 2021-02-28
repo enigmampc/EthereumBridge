@@ -84,7 +84,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         if data['amount'] == 0 and data['data']:
             _, params = self.erc20.decode_function_input(data['data'].hex())
             data['amount'] = params['amount']
-            data['token'] = params['dest']
+            data['token'] = data['dest']
             data['dest'] = params['recipient']
         else:
             if data['token'].lower() == swap_retry_address.lower():

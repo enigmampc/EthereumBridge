@@ -155,8 +155,11 @@ class EtherLeader(Thread):
     def _validate_fee(amount: int, fee: int):
         return amount > fee
 
-    def _tx_native_params(self, amount: int, dest_address: str) -> Tuple[bytes, str, int, str, int]:
-        if self.config.network == "mainnet":
+    def _tx_native_params(self, amount: int, dest_address: str, retry: bool) -> Tuple[bytes, str, int, str, int]:
+        # if fee isn't 0 this will fail because tx_token isn't the ERC20 address from which to collect the fee
+        if retry:
+            fee = 0
+        elif self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
             fee = int(gas_price * 1e9 * self.multisig_wallet.SUBMIT_GAS)
             self.logger.info(f'calculated fee: {fee}')
@@ -174,8 +177,11 @@ class EtherLeader(Thread):
         # self.logger.info(f'{tx_dest}, {tx_amount}, {tx_token}, {fee}')
         return data, tx_dest, tx_amount, tx_token, fee
 
-    def _tx_erc20_params(self, amount, dest_address, dst_token: str) -> Tuple[bytes, str, int, str, int]:
-        if self.config.network == "mainnet":
+    def _tx_erc20_params(self, amount, dest_address, dst_token: str, retry: bool) -> Tuple[bytes, str, int, str, int]:
+        # if fee isn't 0 this will fail because tx_token isn't the ERC20 address from which to collect the fee
+        if retry:
+            fee = 0
+        elif self.config.network == "mainnet":
             decimals = self._coins.decimals(dst_token)
             try:
                 x_rate = BridgeOracle.x_rate('ETH', self._coins.coin(dst_token))
@@ -223,16 +229,16 @@ class EtherLeader(Thread):
         nonce = int(swap_json['nonce'])
         try:
             if dst_token == 'native':
-                data, tx_dest, tx_amount, tx_token, fee = self._tx_native_params(amount, dest_address)
+                data, tx_dest, tx_amount, tx_token, fee = self._tx_native_params(amount, dest_address, retry)
             else:
                 self.erc20.address = dst_token
-                data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token)
+                data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token, retry)
 
             if retry:
                 tx_token = w3.toChecksumAddress(swap_retry_address)
                 nonce = int(self.multisig_wallet.get_token_nonce(swap_retry_address))
-                # if fee isn't 0 this will fail because tx_token isn't the ERC20 address from which to collect the fee
-                fee = 0
+                # tx_amount += fee
+                # fee = 0
 
                 # getTokenNonce
             msg = message.Submit(w3.toChecksumAddress(tx_dest),
