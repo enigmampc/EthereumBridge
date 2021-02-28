@@ -27,7 +27,7 @@ from src.util.web3 import erc20_contract, w3
 
 
 def _parse_db_tx(tx: Swap) -> Tuple[str, int]:
-    token, nonce = tx.src_tx_hash.split('|')
+    nonce, token = tx.src_tx_hash.split('|')
     return token, int(nonce)
 
 
@@ -93,7 +93,8 @@ class EtherLeader(Thread):
         from_block = SwapTrackerObject.get_or_create(src="Ethereum").nonce
 
         self.event_listener.register(self.confirmer.withdraw, ['Withdraw'], from_block=from_block)
-        self.event_listener.register(self.confirmer.failed_withdraw, ['WithdrawFailure'], from_block=from_block)
+        self.event_listener.register(self.confirmer.failed_withdraw, [''
+                                                                      'WithdrawFailure'], from_block=from_block)
         self.event_listener.start()
 
         self._scan_swap()
@@ -124,10 +125,10 @@ class EtherLeader(Thread):
 
             for transaction in Swap.objects(status=Status.SWAP_RETRY, src_network="Secret"):
                 # self._handle_swap(swap_data, token, self.token_map[token].address)
-                token, nonce = _parse_db_tx(transaction.src_tx_hash)
+                token, nonce = _parse_db_tx(transaction)
                 swap_data = query_scrt_swap(nonce, self.config.scrt_swap_address, token)
                 # self._retry(transaction)
-                self._handle_swap(swap_data, token, self.token_map[token].address)
+                self._handle_swap(swap_data, token, self.token_map[token].address, True)
 
             for token in self.token_map:
                 try:
@@ -228,8 +229,11 @@ class EtherLeader(Thread):
                 data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token)
 
             if retry:
-                tx_token = swap_retry_address
-                nonce = self.multisig_wallet.get_token_nonce(swap_retry_address)
+                tx_token = w3.toChecksumAddress(swap_retry_address)
+                nonce = int(self.multisig_wallet.get_token_nonce(swap_retry_address))
+                # if fee isn't 0 this will fail because tx_token isn't the ERC20 address from which to collect the fee
+                fee = 0
+
                 # getTokenNonce
             msg = message.Submit(w3.toChecksumAddress(tx_dest),
                                  tx_amount,  # if we are swapping token, no ether should be rewarded
@@ -254,9 +258,13 @@ class EtherLeader(Thread):
                 pass
             return
 
-        swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
-                    dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
-                    status=Status.SWAP_FAILED)
+        if retry:
+            swap = Swap.objects.get(src_tx_hash=swap_id)
+            swap.status = Status.SWAP_FAILED
+        else:
+            swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
+                        dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
+                        status=Status.SWAP_FAILED)
         self._broadcast_and_save(msg, swap, swap_id)
 
     def _broadcast_and_save(self, msg: message.Submit, swap: Swap, swap_id: str):

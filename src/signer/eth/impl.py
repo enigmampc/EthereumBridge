@@ -84,8 +84,11 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         if data['amount'] == 0 and data['data']:
             _, params = self.erc20.decode_function_input(data['data'].hex())
             data['amount'] = params['amount']
+            data['token'] = params['dest']
             data['dest'] = params['recipient']
-
+        else:
+            if data['token'].lower() == swap_retry_address.lower():
+                data['token'] = '0x0000000000000000000000000000000000000000'
         if not self._is_confirmed(transaction_id, data):
             self.logger.info(f'Transaction {transaction_id} is missing approvals. Checking validity..')
 
@@ -115,14 +118,8 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
 
         try:
             if token == '0x0000000000000000000000000000000000000000':
-                # self.logger.info("Testing secret-ETH to ETH swap")
                 swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address('native'))
-            # elif token == swap_retry_address:
-            #     return True
-                # ScrtRetry.objects.get(id=f'{nonce}|')
-                # swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address(token))
             else:
-                # self.logger.info(f"Testing {self.token_map[token].address} to {token} swap")
                 swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address(token))
         except subprocess.CalledProcessError as e:
             self.logger.error(f'Error querying transaction: {e}')
