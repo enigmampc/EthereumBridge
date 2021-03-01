@@ -24,6 +24,12 @@ def signer_id(account):
     return f'signer-{account}'
 
 
+def extract_nonce_from_retry(data):
+    data['nonce'] = int(ScrtRetry.objects().get(
+        retry_id=f'{data["nonce"]}|{data["token"].lower()}'
+    ).original_id.split('|')[0])
+
+
 class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-arguments
     """
     Used to run through all the blocks starting from the number specified by the 'eth_start_block' config value, and up
@@ -87,9 +93,11 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
 
             # if this is a retry swap we need to pull the original nonce to test
             if data['token'].lower() == swap_retry_address.lower():
-                data['nonce'] = ScrtRetry.objects().get(
-                    retry_id=f'{data["nonce"]}|{data["token"].lower()}'
-                ).split('|')[0]
+                try:
+                    extract_nonce_from_retry(data)
+                except Exception as e:  # pylint: disable=broad-except
+                    self.logger.error(f"Failed to get retry swap object for {data}. Error: {e}")
+                    return
 
             data['token'] = data['dest']
             data['dest'] = params['recipient']
@@ -98,9 +106,11 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
             if data['token'].lower() == swap_retry_address.lower():
 
                 # if this is a retry swap we need to pull the original nonce to test
-                data['nonce'] = ScrtRetry.objects().get(
-                    retry_id=f'{data["nonce"]}|{data["token"].lower()}'
-                ).split('|')[0]
+                try:
+                    extract_nonce_from_retry(data)
+                except Exception as e:  # pylint: disable=broad-except
+                    self.logger.error(f"Failed to get retry swap object for {data}. Error: {e}")
+                    return
 
                 # and set the address to ETH
                 data['token'] = '0x0000000000000000000000000000000000000000'

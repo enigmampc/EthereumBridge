@@ -125,10 +125,14 @@ class EtherLeader(Thread):
 
             for transaction in Swap.objects(status=Status.SWAP_RETRY, src_network="Secret"):
                 # self._handle_swap(swap_data, token, self.token_map[token].address)
-                token, nonce = _parse_db_tx(transaction)
-                swap_data = query_scrt_swap(nonce, self.config.scrt_swap_address, token)
-                # self._retry(transaction)
-                self._handle_swap(swap_data, token, self.token_map[token].address, True)
+                try:
+                    token, nonce = _parse_db_tx(transaction)
+                    swap_data = query_scrt_swap(nonce, self.config.scrt_swap_address, token)
+                    # self._retry(transaction)
+                    self._handle_swap(swap_data, token, self.token_map[token].address, True)
+                except Exception as e:  # pylint: disable=broad-except
+                    self.logger.error(f'Failed to retry swap: {e}')
+                    transaction.update(status=Status.SWAP_FAILED)
 
             for token in self.token_map:
                 try:
@@ -237,12 +241,12 @@ class EtherLeader(Thread):
             if retry:
                 original_id = f"{nonce}|{tx_token}"
                 tx_token = w3.toChecksumAddress(swap_retry_address)
-                nonce = int(self.multisig_wallet.get_token_nonce(swap_retry_address))
+                nonce = int(self.multisig_wallet.get_token_nonce(swap_retry_address) + 1)  # + 1 to advance the counter
                 retry_id = f"{nonce}|{tx_token.lower()}"
                 try:
                     ScrtRetry(retry_id=retry_id, original_id=original_id).save()
                 except (NotUniqueError, DuplicateKeyError):
-                    raise ValueError('Failed to send swap again - possible duplicate')
+                    raise NotUniqueError('Failed to send swap again - possible duplicate')
                 # tx_amount += fee
                 # fee = 0
 
