@@ -84,11 +84,27 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         if data['amount'] == 0 and data['data']:
             _, params = self.erc20.decode_function_input(data['data'].hex())
             data['amount'] = params['amount']
+
+            # if this is a retry swap we need to pull the original nonce to test
+            if data['token'].lower() == swap_retry_address.lower():
+                data['nonce'] = ScrtRetry.objects().get(
+                    retry_id=f'{data["nonce"]}|{data["token"].lower()}'
+                ).split('|')[0]
+
             data['token'] = data['dest']
             data['dest'] = params['recipient']
+
         else:
             if data['token'].lower() == swap_retry_address.lower():
+
+                # if this is a retry swap we need to pull the original nonce to test
+                data['nonce'] = ScrtRetry.objects().get(
+                    retry_id=f'{data["nonce"]}|{data["token"].lower()}'
+                ).split('|')[0]
+
+                # and set the address to ETH
                 data['token'] = '0x0000000000000000000000000000000000000000'
+
         if not self._is_confirmed(transaction_id, data):
             self.logger.info(f'Transaction {transaction_id} is missing approvals. Checking validity..')
 

@@ -27,7 +27,7 @@ class EthEventListener(EventProvider):
         self.logger = get_logger(
             db_name=config.db_name,
             loglevel=config.log_level,
-            logger_name=config.logger_name or f"{self.__class__.__name__}-{self.id}"
+            logger_name=config.logger_name or f"{self.__class__.__name__}-{self.id}-{config.eth_address[0:5]}"
         )
         self.events = []
         self.pending_events: List[Tuple[str, LogReceipt]] = []

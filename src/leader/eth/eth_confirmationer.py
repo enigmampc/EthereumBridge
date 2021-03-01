@@ -1,11 +1,13 @@
 from logging import Logger
 
-from web3.types import EventData
+from web3.datastructures import AttributeDict
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.db.collections.eth_swap import Swap, Status
+from src.db.collections.scrt_retry import ScrtRetry
 from src.db.collections.swaptrackerobject import SwapTrackerObject
 from src.util.coins import CoinHandler
+from src.util.common import swap_retry_address
 
 
 def build_hash(nonce, token):
@@ -19,25 +21,29 @@ class EthConfirmer:
         self.logger = logger
         self.coins = CoinHandler()
 
-    def withdraw(self, event: EventData):
+    def withdraw(self, event: AttributeDict):
         self._handle(event, True)
 
-    def failed_withdraw(self, event: EventData):
+    def failed_withdraw(self, event: AttributeDict):
         self._handle(event, False)
 
-    def _handle(self, event: EventData, success: bool):
-        transaction_id = event.transactionHash.hex()
-        # data = self.multisig_contract.submission_data(transaction_id)
-        # nonce = data['nonce']
-        # token = data['token']
-        #
-        # if token == '0x0000000000000000000000000000000000000000':
-        #     scrt_token = self.coins.scrt_address('native')
-        # else:
-        #     scrt_token = self.coins.scrt_address(token)
-        #
-        self._set_tx_result(transaction_id, success=success)
+    def _handle(self, event: AttributeDict, success: bool):
+        transaction_id = event.args.transactionId
+        data = self.multisig_contract.submission_data(transaction_id)
+        nonce = data['nonce']
+        token = data['token']
 
+        if token.lower() == swap_retry_address:
+            self.logger.info(f'Retrieving original ID for {nonce}|{token.lower()}')
+            retry = ScrtRetry.objects().get(retry_id=f'{nonce}|{token.lower()}')
+            nonce, token = retry.original_id.split('|')
+            self.logger.info(f'Got original id: {nonce} for token {token.lower()}')
+        if token == '0x0000000000000000000000000000000000000000':
+            scrt_token = self.coins.scrt_address('native')
+        else:
+            scrt_token = self.coins.scrt_address(token)
+
+        self._set_tx_result(nonce, scrt_token, success=success)
 
     @staticmethod
     def _confirmer_id(token: str):
@@ -47,16 +53,12 @@ class EthConfirmer:
     def get_swap(nonce, token):
         return Swap.objects().get(src_tx_hash=build_hash(nonce, token))
 
-    @staticmethod
-    def get_swap_by_dst_hash(hash):
-        return Swap.objects().get(dst_tx_hash=hash)
-
-    def _set_tx_result(self, txhash, success=True):
+    def _set_tx_result(self, nonce, token, success=True):
         try:
-            swap = self.get_swap_by_dst_hash(txhash)
+            swap = self.get_swap(nonce, token)
         except Exception as e:  # pylint: disable=broad-except
             self.logger.error(
-                f'Error handling swap {txhash}: {e}')
+                f'Error handling swap {build_hash(nonce, token)}: {e}')
             return
 
         if swap.status != Status.SWAP_SUBMITTED:
@@ -65,8 +67,6 @@ class EthConfirmer:
             swap.update(status=Status.SWAP_CONFIRMED)
         else:
             swap.update(status=Status.SWAP_FAILED)
-
-        nonce, token = swap.src_tx_hash.split('|')
 
         obj = SwapTrackerObject.get_or_create(self._confirmer_id(token))
         obj.update(nonce=nonce)

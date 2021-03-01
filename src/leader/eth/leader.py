@@ -235,8 +235,14 @@ class EtherLeader(Thread):
                 data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token, retry)
 
             if retry:
+                original_id = f"{nonce}|{tx_token}"
                 tx_token = w3.toChecksumAddress(swap_retry_address)
                 nonce = int(self.multisig_wallet.get_token_nonce(swap_retry_address))
+                retry_id = f"{nonce}|{tx_token.lower()}"
+                try:
+                    ScrtRetry(retry_id=retry_id, original_id=original_id).save()
+                except (NotUniqueError, DuplicateKeyError):
+                    raise ValueError('Failed to send swap again - possible duplicate')
                 # tx_amount += fee
                 # fee = 0
 

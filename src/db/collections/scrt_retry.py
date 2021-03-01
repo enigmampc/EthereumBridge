@@ -1,12 +1,6 @@
-from datetime import datetime
-
-from mongoengine import Document, StringField, DateTimeField, IntField, ObjectIdField
-
-from src.db.collections.common import EnumField
-from src.db.collections.eth_swap import Status
+from mongoengine import Document, StringField
 
 
 class ScrtRetry(Document):
-    swap = ObjectIdField(required=True)
-    # original_nonce = IntField(required=True)
-    original_contract = StringField(required=False)
+    original_id = StringField(required=True, unique=True)
+    retry_id = StringField(required=True, unique=True)
