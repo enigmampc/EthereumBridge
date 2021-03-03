@@ -282,7 +282,6 @@ class EtherLeader(Thread):
         except (DuplicateKeyError, NotUniqueError):
             pass
 
-
     @staticmethod
     def update_retry_db(original_id, retry_id):
         try:
