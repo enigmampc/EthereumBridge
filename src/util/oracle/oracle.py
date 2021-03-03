@@ -48,7 +48,7 @@ class Oracle:
         filtered = list(filter(lambda p: p, prices))
 
         if not filtered:
-            raise ValueError(f"Failed to get gas prices")
+            raise ValueError("Failed to get gas prices")
 
         average = sum(filtered) / len(filtered)
         return int(average)

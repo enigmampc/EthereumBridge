@@ -128,8 +128,7 @@ class Secret20Signer(Thread):
 
         if not decrypted_data['add_token']:
             raise ValueError('Tried to get a signature for a different command than add_token!')
-        else:
-            self._validate_and_sign_command(document)
+        self._validate_and_sign_command(document)
 
     def _is_valid(self, tx: Swap) -> bool:
         """Assert that the data in the unsigned_tx matches the tx on the chain"""

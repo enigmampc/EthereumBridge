@@ -189,7 +189,7 @@ class EtherLeader(Thread):
             decimals = self._coins.decimals(dst_token)
             try:
                 x_rate = BridgeOracle.x_rate('ETH', self._coins.coin(dst_token))
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 self.logger.warning(f"Failed to get price for token {dst_token} - falling back to db price")
                 eth = TokenPairing.objects().get(name="Ethereum").price
                 token = TokenPairing.objects().get(src_address=dst_token).price
@@ -224,13 +224,15 @@ class EtherLeader(Thread):
         # swap reported by the contract
         swap_id = get_swap_id(swap_json)
         dest_address = swap_json['destination']
-        self.logger.info(f'{swap_json}')
+        self.logger.debug(f'{swap_json}')
         amount = int(swap_json['amount'])
 
         swap_failed = False
         fee = 0
         data = b''
         nonce = int(swap_json['nonce'])
+        swap = None
+
         try:
             if dst_token == 'native':
                 data, tx_dest, tx_amount, tx_token, fee = self._tx_native_params(amount, dest_address, retry)
@@ -239,18 +241,17 @@ class EtherLeader(Thread):
                 data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token, retry)
 
             if retry:
-                original_id = f"{nonce}|{tx_token}"
-                tx_token = w3.toChecksumAddress(swap_retry_address)
-                nonce = int(self.multisig_wallet.get_token_nonce(swap_retry_address) + 1)  # + 1 to advance the counter
-                retry_id = f"{nonce}|{tx_token.lower()}"
-                try:
-                    ScrtRetry(retry_id=retry_id, original_id=original_id).save()
-                except (NotUniqueError, DuplicateKeyError):
-                    raise NotUniqueError('Failed to send swap again - possible duplicate')
-                # tx_amount += fee
-                # fee = 0
 
-                # getTokenNonce
+                original_nonce = nonce
+                nonce = int(self.multisig_wallet.get_token_nonce(swap_retry_address) + 1)  # + 1 to advance the counter
+
+                swap = Swap.objects.get(src_tx_hash=swap_id)
+                swap.status = Status.SWAP_FAILED
+
+                self.update_retry_db(f"{original_nonce}|{tx_token}", f"{nonce}|{swap_retry_address.lower()}")
+
+                tx_token = w3.toChecksumAddress(swap_retry_address)
+
             msg = message.Submit(w3.toChecksumAddress(tx_dest),
                                  tx_amount,  # if we are swapping token, no ether should be rewarded
                                  nonce,
@@ -262,26 +263,32 @@ class EtherLeader(Thread):
             self.logger.error(f"Error: {e}")
             swap_failed = True
 
-        if swap_failed or not self._validate_fee(amount, fee):
-            self.logger.error(f"Swap failed. Check that amount is not too low to cover fee "
-                              f"and that destination address is valid: {swap_id}")
+        # this could have already been set by retry
+        if not swap:
             swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
                         dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
                         status=Status.SWAP_FAILED)
-            try:
-                swap.save()
-            except (DuplicateKeyError, NotUniqueError):
-                pass
-            return
 
-        if retry:
-            swap = Swap.objects.get(src_tx_hash=swap_id)
-            swap.status = Status.SWAP_FAILED
+        if swap_failed or not self._validate_fee(amount, fee):
+            self._save_failed_swap(swap, swap_id)
         else:
-            swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
-                        dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
-                        status=Status.SWAP_FAILED)
-        self._broadcast_and_save(msg, swap, swap_id)
+            self._broadcast_and_save(msg, swap, swap_id)
+
+    def _save_failed_swap(self, swap, swap_id):
+        self.logger.error(f"Swap failed. Check that amount is not too low to cover fee "
+                          f"and that destination address is valid: {swap_id}")
+        try:
+            swap.save()
+        except (DuplicateKeyError, NotUniqueError):
+            pass
+
+
+    @staticmethod
+    def update_retry_db(original_id, retry_id):
+        try:
+            ScrtRetry(retry_id=retry_id, original_id=original_id).save()
+        except (NotUniqueError, DuplicateKeyError) as e:
+            raise NotUniqueError('Failed to send swap again - possible duplicate') from e
 
     def _broadcast_and_save(self, msg: message.Submit, swap: Swap, swap_id: str):
         try:

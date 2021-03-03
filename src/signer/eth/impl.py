@@ -118,23 +118,29 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         if not self._is_confirmed(transaction_id, data):
             self.logger.info(f'Transaction {transaction_id} is missing approvals. Checking validity..')
 
-            try:
-                if self._is_valid(data):
-                    self.logger.info(f'Transaction {transaction_id} is valid. Signing & approving..')
-                    self._approve_and_sign(transaction_id)
+            self.validate_and_sign(data, submission_event, transaction_id)
 
-                else:
-                    self.logger.error(f'Failed to validate transaction: {data}')
-            except ValueError as e:
-                self.logger.error(f"Error parsing secret-20 swap event {data}. Error: {e}")
-                return
+            self.logger.info(f'Swap from secret network to ethereum signed successfully: {data}')
 
-            # either way we want to continue on
-            finally:
-                obj = SwapTrackerObject.objects().get(src=signer_id(self.account))
-                obj.update(nonce=submission_event["blockNumber"])
+    def validate_and_sign(self, data, submission_event, transaction_id):
+        try:
+            if self._is_valid(data):
+                self.logger.info(f'Transaction {transaction_id} is valid. Signing & approving..')
+                self._approve_and_sign(transaction_id)
 
-        self.logger.info(f'Swap from secret network to ethereum signed successfully: {data}')
+            else:
+                self.logger.error(f'Failed to validate transaction: {data}')
+        except ValueError as e:
+            self.logger.error(f"Error parsing secret-20 swap event {data}. Error: {e}")
+            return
+
+        # either way we want to continue on
+        finally:
+            self.update_tracker_object(submission_event)
+
+    def update_tracker_object(self, submission_event):
+        obj = SwapTrackerObject.objects().get(src=signer_id(self.account))
+        obj.update(nonce=submission_event["blockNumber"])
 
     def _is_valid(self, submission_data: Dict[str, any]) -> bool:
         # lookup the tx hash in secret20, and validate it.

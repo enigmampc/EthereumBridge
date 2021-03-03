@@ -32,17 +32,17 @@ class CustomFormatter(logging.Formatter):
     RESET = "\033[0m"
 
     @classmethod
-    def _colorize(cls, color):
-        return f'[%(asctime)25s] %(levelname)7s [%(name)s] %(funcName)s:%(lineno)s -- %(message)s'
+    def _colorize(cls):
+        return '[%(asctime)25s] %(levelname)7s [%(name)s] %(funcName)s:%(lineno)s -- %(message)s'
 
     @classmethod
     def get_formats(cls):
         return {
-            logging.DEBUG: cls._colorize(cls.GREY),
-            logging.INFO: cls._colorize(cls.GREEN),
-            logging.WARNING: cls._colorize(cls.YELLOW),
-            logging.ERROR: cls._colorize(cls.RED),
-            logging.CRITICAL: cls._colorize(cls.LIGHT_RED)
+            logging.DEBUG: cls._colorize(),
+            logging.INFO: cls._colorize(),
+            logging.WARNING: cls._colorize(),
+            logging.ERROR: cls._colorize(),
+            logging.CRITICAL: cls._colorize()
         }
 
     def format(self, record):
