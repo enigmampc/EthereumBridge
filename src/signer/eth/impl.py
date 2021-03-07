@@ -1,5 +1,7 @@
 import subprocess
 from json import JSONDecodeError
+from random import randrange
+from time import sleep
 from typing import Dict
 
 from web3.datastructures import AttributeDict
@@ -8,6 +10,7 @@ import src.contracts.ethereum.message as message
 from src.contracts.ethereum.ethr_contract import broadcast_transaction
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import swap_query_res
+from src.db.collections.eth_signatures import EthSignatures
 from src.db.collections.scrt_retry import ScrtRetry
 from src.db.collections.swaptrackerobject import SwapTrackerObject
 from src.util.coins import CoinHandler
@@ -28,6 +31,10 @@ def extract_nonce_from_retry(data):
     data['nonce'] = int(ScrtRetry.objects().get(
         retry_id=f'{data["nonce"]}|{data["token"].lower()}'
     ).original_id.split('|')[0])
+
+
+def _random_backoff():
+    sleep(randrange(10))
 
 
 class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-arguments
@@ -86,6 +93,16 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
 
         data = self.multisig_contract.submission_data(transaction_id)
 
+        # this is here to avoid possible race-condition between different signers
+        # since we don't want everyone to sign at the same time - each signer sleeps randomly between 1 and 10 seconds
+        # slow down is probably insignificant
+        _random_backoff()
+
+        if self._is_confirmed(transaction_id, data):
+            return
+
+        self.logger.info(f'Transaction {transaction_id} is missing approvals. Checking validity..')
+
         # check if submitted tx is an ERC-20 transfer tx
         if data['amount'] == 0 and data['data']:
             _, params = self.erc20.decode_function_input(data['data'].hex())
@@ -115,12 +132,9 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
                 # and set the address to ETH
                 data['token'] = '0x0000000000000000000000000000000000000000'
 
-        if not self._is_confirmed(transaction_id, data):
-            self.logger.info(f'Transaction {transaction_id} is missing approvals. Checking validity..')
+        self.validate_and_sign(data, submission_event, transaction_id)
 
-            self.validate_and_sign(data, submission_event, transaction_id)
-
-            self.logger.info(f'Swap from secret network to ethereum signed successfully: {data}')
+        self.logger.info(f'Swap from secret network to ethereum signed successfully: {data}')
 
     def validate_and_sign(self, data, submission_event, transaction_id):
         try:
@@ -190,6 +204,10 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
     def _is_confirmed(self, transaction_id: int, submission_data: Dict[str, any]) -> bool:
         """Checks with the data on the contract if signer already added confirmation or if threshold already reached"""
 
+        if EthSignatures.objects(tx_id=transaction_id).count() >= self.config.signatures_threshold:
+            self.logger.debug(f'Transaction {transaction_id} has already been signed more than threshold')
+            return True
+
         # check if already executed
         if submission_data['executed']:
             return True
@@ -218,6 +236,11 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
                                                     gas_limit=self.multisig_contract.CONFIRM_GAS)
         tx = self.multisig_contract.sign_transaction(tx, self.signer)
         tx_hash = broadcast_transaction(tx)
+
+        try:
+            EthSignatures(tx_id=submission_id, tx_hash=tx_hash, signer=self.signer.address).save()
+        except Exception as e:  # pylint: disable=broad-except
+            self.logger.error(f"Failed to get save signature object {submission_id=} {tx_hash}. Error: {e}")
 
         # tx_hash = self.multisig_contract.confirm_transaction(self.account, self.private_key, gas_prices, msg)
         self.logger.info(msg=f"Signed transaction - signer: {self.account}, signed msg: {msg}, "

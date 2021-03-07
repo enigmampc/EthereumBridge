@@ -1,8 +1,10 @@
 from logging import Logger
 
 from web3.datastructures import AttributeDict
+from web3.types import LogReceipt
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
+from src.db.collections.eth_signatures import EthSignatures
 from src.db.collections.eth_swap import Swap, Status
 from src.db.collections.scrt_retry import ScrtRetry
 from src.db.collections.swaptrackerobject import SwapTrackerObject
@@ -20,6 +22,13 @@ class EthConfirmer:
         self.multisig_contract = multisig_contract
         self.logger = logger
         self.coins = CoinHandler()
+
+    def submit(self, event: LogReceipt):
+        self._handle_submit(event)
+
+    @staticmethod
+    def _handle_submit(event: LogReceipt):
+        EthSignatures(tx_id=event.args.transactionId, tx_hash=event['transactionHash'], signer="leader").save()
 
     def withdraw(self, event: AttributeDict):
         self._handle(event, True)

@@ -11,6 +11,7 @@ from src.contracts.ethereum.ethr_contract import broadcast_transaction
 from src.contracts.ethereum.event_listener import EthEventListener
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import swap_query_res, get_swap_id
+from src.db.collections.eth_signatures import EthSignatures
 from src.db.collections.eth_swap import Swap, Status
 from src.db.collections.scrt_retry import ScrtRetry
 from src.db.collections.swaptrackerobject import SwapTrackerObject
@@ -92,6 +93,7 @@ class EtherLeader(Thread):
         # todo: fix so tracker doesn't start from 0
         from_block = SwapTrackerObject.get_or_create(src="Ethereum").nonce
 
+        self.event_listener.register(self.confirmer.submit, ['Submit'], from_block=from_block)
         self.event_listener.register(self.confirmer.withdraw, ['Withdraw'], from_block=from_block)
         self.event_listener.register(self.confirmer.failed_withdraw, [''
                                                                       'WithdrawFailure'], from_block=from_block)
