@@ -122,19 +122,19 @@ class CommandHandler(tornado.web.RequestHandler):
         self.threads[3].manager.sequence += 1
 
 
-class TestHandler(tornado.web.RequestHandler):
-    def __init__(self, application, request, **kwargs):
-        self.threads: None = None
-        super().__init__(application, request, **kwargs)
-
-    def initialize(self, threads):
-        self.threads: Tuple[EtherSigner, Secret20Signer, Optional[EtherLeader], Optional[Secret20Leader]] = threads
-
-    def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
-        pass
-
-    def get(self):
-        self.threads[0].stop()
+# class TestHandler(tornado.web.RequestHandler):
+#     def __init__(self, application, request, **kwargs):
+#         self.threads: None = None
+#         super().__init__(application, request, **kwargs)
+#
+#     def initialize(self, threads):
+#         self.threads: Tuple[EtherSigner, Secret20Signer, Optional[EtherLeader], Optional[Secret20Leader]] = threads
+#
+#     def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
+#         pass
+#
+#     def get(self):
+#         self.threads[0].stop()
 
 
 class HealthChecker(Thread):
@@ -176,7 +176,7 @@ def make_app(threads):
         (r"/health", MainHandler, dict(threads=threads)),
         (r"/health_simple", HealthSimpleHandler, dict(threads=threads)),
         (r"/add_token", CommandHandler, dict(threads=threads)),
-        (r"/test", TestHandler, dict(threads=threads)),
+        # (r"/test", TestHandler, dict(threads=threads)),
     ])
 
 
