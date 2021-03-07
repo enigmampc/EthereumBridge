@@ -1,7 +1,4 @@
 import sys
-from threading import Thread
-from time import sleep
-from typing import List
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.db import database
@@ -54,8 +51,10 @@ def run_bridge():  # pylint: disable=too-many-statements
         eth_signer = EtherSigner(eth_wallet, signer, config=config)
         s20_signer = Secret20Signer(secret_account, eth_wallet, config)
 
-        runners.append(eth_signer)
         runners.append(s20_signer)
+
+        if config.mode.lower() == 'signer':
+            runners.append(eth_signer)
 
         if config.mode.lower() == 'leader':
             eth_leader = EtherLeader(eth_wallet, signer, config=config)
@@ -67,22 +66,22 @@ def run_bridge():  # pylint: disable=too-many-statements
             runners.append(s20_leader)
 
         # run_all(runners)
-        run(runners)
+        run(runners, config)
 
 
-def run_all(runners: List[Thread]):
-    for r in runners:
-        r.start()
-
-    try:
-        while True:
-            sleep(1)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        for r in runners:
-            if r.is_alive():
-                r.stop()
+# def run_all(runners: List[Thread]):
+#     for r in runners:
+#         r.start()
+#
+#     try:
+#         while True:
+#             sleep(1)
+#     except KeyboardInterrupt:
+#         pass
+#     finally:
+#         for r in runners:
+#             if r.is_alive():
+#                 r.stop()
 
 
 if __name__ == '__main__':
