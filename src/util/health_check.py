@@ -4,7 +4,7 @@ from collections import ChainMap
 from datetime import datetime
 from functools import reduce
 from threading import Thread
-from typing import List, Optional, Awaitable, Tuple
+from typing import List, Optional, Awaitable, Tuple, Dict
 
 import requests
 import tornado.ioloop
@@ -150,19 +150,30 @@ class HealthChecker(Thread):
                 health_object: SignerHealth = SignerHealth.objects().get(signer=self.config.eth_address)
 
                 healthy = True
+                to_scrt = True
+                from_scrt = True
                 result = requests.get('http://localhost:8888/health_simple')
                 if not result.ok:
                     healthy = False
+                    result = requests.get('http://localhost:8888/health')
+                    as_json: Dict[str, str] = result.json()
 
-                health_object.update(health=healthy, updated_on=datetime.now())
+                    for k, v in as_json.items():
+                        if v == 'fail':
+                            if k.startswith('Secret'):
+                                to_scrt = False
+                            if k.startswith('Ether'):
+                                from_scrt = False
+
+                health_object.update(health=healthy, updated_on=datetime.now(), from_scrt=from_scrt, to_scrt=to_scrt)
 
             except DoesNotExist:
-                SignerHealth(signer=self.config.eth_address, health=True).save()
+                SignerHealth(signer=self.config.eth_address, health=True, from_scrt=True, to_scrt=True).save()
 
             except (ConnectionFailure, OperationError, requests.RequestException):
 
                 health_object: SignerHealth = SignerHealth.objects().get(signer=self.config.eth_address)
-                health_object.update(health=False, updated_on=datetime.now())
+                health_object.update(health=False, updated_on=datetime.now(), from_scrt=False, to_scrt=False)
 
             time.sleep(30)
 
