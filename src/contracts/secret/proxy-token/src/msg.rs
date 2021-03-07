@@ -83,6 +83,11 @@ pub enum HandleMsg {
         address: HumanAddr,
         padding: Option<String>,
     },
+    ChangeSwapAddr {
+        address: HumanAddr,
+        code_hash: String,
+        padding: Option<String>,
+    },
     SetContractStatus {
         level: ContractStatusLevel,
         padding: Option<String>,
@@ -133,6 +138,7 @@ pub enum HandleAnswer {
 
     // Other
     ChangeAdmin { status: ResponseStatus },
+    ChangeSwapAddr { status: ResponseStatus },
     SetContractStatus { status: ResponseStatus },
 }
 

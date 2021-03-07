@@ -75,6 +75,7 @@ class EthEventListener(EventProvider):
             try:
                 self.logger.debug(f'Scanning for new events of type {self.events}')
                 for name, event in self.get_new_events():
+                    print("ahola")
                     self.logger.info(f"New event found {name}, adding to confirmation handler")
                     self.pending_events.append((name, event))
                 for name, event in self.confirmation_handler():
