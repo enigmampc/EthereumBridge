@@ -27,7 +27,6 @@ class EthConfirmer:
         self._handle_submit(event)
 
     def _handle_submit(self, event: LogReceipt):
-        self.logger.error(f'{event}')
         data = self.multisig_contract.submission_data(event.args.transactionId)
         nonce, scrt_token = self.get_tx_params_from_data(data)
         swap_id = build_hash(nonce, scrt_token)
