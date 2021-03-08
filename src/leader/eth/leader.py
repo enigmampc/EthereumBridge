@@ -12,17 +12,23 @@ from src.contracts.ethereum.event_listener import EthEventListener
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import swap_query_res, get_swap_id
 from src.db.collections.eth_swap import Swap, Status
+from src.db.collections.scrt_retry import ScrtRetry
 from src.db.collections.swaptrackerobject import SwapTrackerObject
 from src.db.collections.token_map import TokenPairing
 from src.leader.eth.eth_confirmationer import EthConfirmer
 from src.util.coins import CoinHandler
-from src.util.common import Token
+from src.util.common import Token, swap_retry_address
 from src.util.config import Config
 from src.util.crypto_store.crypto_manager import CryptoManagerBase
 from src.util.logger import get_logger
 from src.util.oracle.oracle import BridgeOracle
 from src.util.secretcli import query_scrt_swap
 from src.util.web3 import erc20_contract, w3
+
+
+def _parse_db_tx(tx: Swap) -> Tuple[str, int]:
+    nonce, token = tx.src_tx_hash.split('|')
+    return token, int(nonce)
 
 
 class EtherLeader(Thread):
@@ -86,6 +92,7 @@ class EtherLeader(Thread):
         # todo: fix so tracker doesn't start from 0
         from_block = SwapTrackerObject.get_or_create(src="Ethereum").nonce
 
+        self.event_listener.register(self.confirmer.submit, ['Submission'], from_block=from_block)
         self.event_listener.register(self.confirmer.withdraw, ['Withdraw'], from_block=from_block)
         self.event_listener.register(self.confirmer.failed_withdraw, ['WithdrawFailure'], from_block=from_block)
         self.event_listener.start()
@@ -100,6 +107,12 @@ class EtherLeader(Thread):
 
         self.token_map = token_map
 
+    # def _retry(self, tx: Swap):
+    #     ScrtRetry(swap=tx.id, original_contract=tx.dst_address).save()
+    #     tx.dst_address = swap_retry_address
+    #     tx.status = Status.SWAP_UNSIGNED
+    #     tx.save()
+
     def _scan_swap(self):
         """ Scans secret network contract for swap events """
         self.logger.info(f'Starting for account {self.signer.address} with tokens: {self.token_map=}')
@@ -109,6 +122,17 @@ class EtherLeader(Thread):
             if num_of_tokens != len(self.token_map.keys()):
                 self._refresh_token_map()
                 self.logger.info(f'Refreshed tracked tokens. Now tracking {len(self.token_map.keys())} tokens')
+
+            for transaction in Swap.objects(status=Status.SWAP_RETRY, src_network="Secret"):
+                # self._handle_swap(swap_data, token, self.token_map[token].address)
+                try:
+                    token, nonce = _parse_db_tx(transaction)
+                    swap_data = query_scrt_swap(nonce, self.config.scrt_swap_address, token)
+                    # self._retry(transaction)
+                    self._handle_swap(swap_data, token, self.token_map[token].address, True)
+                except Exception as e:  # pylint: disable=broad-except
+                    self.logger.error(f'Failed to retry swap: {e}')
+                    transaction.update(status=Status.SWAP_FAILED)
 
             for token in self.token_map:
                 try:
@@ -135,8 +159,11 @@ class EtherLeader(Thread):
     def _validate_fee(amount: int, fee: int):
         return amount > fee
 
-    def _tx_native_params(self, amount: int, dest_address: str) -> Tuple[bytes, str, int, str, int]:
-        if self.config.network == "mainnet":
+    def _tx_native_params(self, amount: int, dest_address: str, retry: bool) -> Tuple[bytes, str, int, str, int]:
+        # if fee isn't 0 this will fail because tx_token isn't the ERC20 address from which to collect the fee
+        if retry:
+            fee = 0
+        elif self.config.network == "mainnet":
             gas_price = BridgeOracle.gas_price()
             fee = int(gas_price * 1e9 * self.multisig_wallet.SUBMIT_GAS)
             self.logger.info(f'calculated fee: {fee}')
@@ -154,10 +181,20 @@ class EtherLeader(Thread):
         # self.logger.info(f'{tx_dest}, {tx_amount}, {tx_token}, {fee}')
         return data, tx_dest, tx_amount, tx_token, fee
 
-    def _tx_erc20_params(self, amount, dest_address, dst_token: str) -> Tuple[bytes, str, int, str, int]:
-        if self.config.network == "mainnet":
+    def _tx_erc20_params(self, amount, dest_address, dst_token: str, retry: bool) -> Tuple[bytes, str, int, str, int]:
+        # if fee isn't 0 this will fail because tx_token isn't the ERC20 address from which to collect the fee
+        if retry:
+            fee = 0
+        elif self.config.network == "mainnet":
             decimals = self._coins.decimals(dst_token)
-            x_rate = BridgeOracle.x_rate('ETH', self._coins.coin(dst_token))
+            try:
+                x_rate = BridgeOracle.x_rate('ETH', self._coins.coin(dst_token))
+            except Exception:  # pylint: disable=broad-except
+                self.logger.warning(f"Failed to get price for token {dst_token} - falling back to db price")
+                eth = TokenPairing.objects().get(name="Ethereum").price
+                token = TokenPairing.objects().get(src_address=dst_token).price
+                x_rate = float(eth) / float(token)
+
             self.logger.info(f'Calculated exchange rate: {x_rate=}')
             gas_price = BridgeOracle.gas_price()
             fee = BridgeOracle.calculate_fee(self.multisig_wallet.SUBMIT_GAS,
@@ -181,51 +218,76 @@ class EtherLeader(Thread):
 
         return data, tx_dest, tx_amount, tx_token, fee
 
-    def _handle_swap(self, swap_data: str, src_token: str, dst_token: str):
+    def _handle_swap(self, swap_data: str, src_token: str, dst_token: str, retry=False):
         swap_json = swap_query_res(swap_data)
         # this is an id, and not the TX hash since we don't actually know where the TX happened, only the id of the
         # swap reported by the contract
         swap_id = get_swap_id(swap_json)
         dest_address = swap_json['destination']
-        self.logger.info(f'{swap_json}')
+        self.logger.debug(f'{swap_json}')
         amount = int(swap_json['amount'])
 
         swap_failed = False
         fee = 0
         data = b''
+        nonce = int(swap_json['nonce'])
+        swap = None
+
         try:
             if dst_token == 'native':
-                data, tx_dest, tx_amount, tx_token, fee = self._tx_native_params(amount, dest_address)
+                data, tx_dest, tx_amount, tx_token, fee = self._tx_native_params(amount, dest_address, retry)
             else:
                 self.erc20.address = dst_token
-                data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token)
+                data, tx_dest, tx_amount, tx_token, fee = self._tx_erc20_params(amount, dest_address, dst_token, retry)
+
+            if retry:
+
+                original_nonce = nonce
+                nonce = int(self.multisig_wallet.get_token_nonce(swap_retry_address) + 1)  # + 1 to advance the counter
+
+                swap = Swap.objects.get(src_tx_hash=swap_id)
+                swap.status = Status.SWAP_FAILED
+
+                self.update_retry_db(f"{original_nonce}|{tx_token}", f"{nonce}|{swap_retry_address.lower()}")
+
+                tx_token = w3.toChecksumAddress(swap_retry_address)
 
             msg = message.Submit(w3.toChecksumAddress(tx_dest),
                                  tx_amount,  # if we are swapping token, no ether should be rewarded
-                                 int(swap_json['nonce']),
+                                 nonce,
                                  tx_token,
                                  fee,
                                  data)
 
-        except ValueError:
+        except ValueError as e:
+            self.logger.error(f"Error: {e}")
             swap_failed = True
 
-        if swap_failed or not self._validate_fee(amount, fee):
-            self.logger.error(f"Swap failed. Check that amount is not too low to cover fee "
-                              f"and that destination address is valid: {swap_id}")
+        # this could have already been set by retry
+        if not swap:
             swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
                         dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
                         status=Status.SWAP_FAILED)
-            try:
-                swap.save()
-            except (DuplicateKeyError, NotUniqueError):
-                pass
-            return
 
-        swap = Swap(src_network="Secret", src_tx_hash=swap_id, unsigned_tx=data, src_coin=src_token,
-                    dst_coin=dst_token, dst_address=dest_address, amount=str(amount), dst_network="Ethereum",
-                    status=Status.SWAP_FAILED)
-        self._broadcast_and_save(msg, swap, swap_id)
+        if swap_failed or not self._validate_fee(amount, fee):
+            self._save_failed_swap(swap, swap_id)
+        else:
+            self._broadcast_and_save(msg, swap, swap_id)
+
+    def _save_failed_swap(self, swap, swap_id):
+        self.logger.error(f"Swap failed. Check that amount is not too low to cover fee "
+                          f"and that destination address is valid: {swap_id}")
+        try:
+            swap.save()
+        except (DuplicateKeyError, NotUniqueError):
+            pass
+
+    @staticmethod
+    def update_retry_db(original_id, retry_id):
+        try:
+            ScrtRetry(retry_id=retry_id, original_id=original_id).save()
+        except (NotUniqueError, DuplicateKeyError) as e:
+            raise NotUniqueError('Failed to send swap again - possible duplicate') from e
 
     def _broadcast_and_save(self, msg: message.Submit, swap: Swap, swap_id: str):
         try:

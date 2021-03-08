@@ -1,5 +1,7 @@
 import json
 import os
+import time
+
 from threading import Lock
 from typing import List, Tuple, Optional, Generator
 
@@ -8,6 +10,7 @@ from web3.contract import Contract as Web3Contract
 from web3.datastructures import AttributeDict
 from web3.logs import DISCARD
 from web3.types import BlockData
+from web3.exceptions import TransactionNotFound
 
 from src.util.common import project_base_path
 from src.util.config import config
@@ -51,8 +54,16 @@ def event_log(tx_hash: str, events: List[str], provider: Web3, contract: Web3Con
     :param contract: Web3 Contract
     :return: event name and log represented in 'AttributeDict' or 'None' if not found
     """
+    try:
+        receipt = provider.eth.getTransactionReceipt(tx_hash)
+    except TransactionNotFound:
+        time.sleep(3000)  # hard coded sleep for 3 seconds... maybe this will help?
+        # retry
+        try:
+            receipt = provider.eth.getTransactionReceipt(tx_hash)
+        except TransactionNotFound:
+            return '', None
 
-    receipt = provider.eth.getTransactionReceipt(tx_hash)
     for event in events:
         # we discard warning as we do best effort to find wanted event, not always there
         # as we listen to the entire contract tx, might

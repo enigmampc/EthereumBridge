@@ -37,6 +37,9 @@ class MultisigWallet(EthereumContract):
             args=message.args()
         )
 
+    def get_token_nonce(self, address):
+        return self.contract.functions.getTokenNonce(self.provider.toChecksumAddress(address)).call()
+
     def extract_addr(self, tx_log) -> str:
         return tx_log.args.recipient.decode()
 

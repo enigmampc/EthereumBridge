@@ -25,7 +25,10 @@ class Oracle:
 
     @staticmethod
     async def _get_gas_price_from_source(source: GasSourceBase) -> int:
-        return await source.gas_price()
+        try:
+            return await source.gas_price()
+        except Exception:  # pylint: disable=broad-except
+            return 0
 
     async def _price(self, coin: str, currency: Currency) -> float:
         prices = await asyncio.gather(*(self._get_price_from_source(source, coin, currency)
@@ -42,7 +45,12 @@ class Oracle:
     async def _gas_price(self) -> int:
         prices = await asyncio.gather(*(self._get_gas_price_from_source(source) for source in self.gas_sources))
 
-        average = sum(prices) / len(prices)
+        filtered = list(filter(lambda p: p, prices))
+
+        if not filtered:
+            raise ValueError("Failed to get gas prices")
+
+        average = sum(filtered) / len(filtered)
         return int(average)
 
     def price(self, coin: str, currency: Currency) -> float:

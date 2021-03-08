@@ -9,6 +9,8 @@ from typing import List, Generator
 
 import src
 
+swap_retry_address = '0x00000000000000000000000000000000deadbeef'
+
 
 @contextmanager
 def temp_file(data: str):

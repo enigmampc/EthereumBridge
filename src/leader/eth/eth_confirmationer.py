@@ -1,11 +1,15 @@
 from logging import Logger
 
 from web3.datastructures import AttributeDict
+from web3.types import LogReceipt
 
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
+from src.db.collections.eth_signatures import EthSignatures
 from src.db.collections.eth_swap import Swap, Status
+from src.db.collections.scrt_retry import ScrtRetry
 from src.db.collections.swaptrackerobject import SwapTrackerObject
 from src.util.coins import CoinHandler
+from src.util.common import swap_retry_address
 
 
 def build_hash(nonce, token):
@@ -19,6 +23,18 @@ class EthConfirmer:
         self.logger = logger
         self.coins = CoinHandler()
 
+    def submit(self, event: LogReceipt):
+        self._handle_submit(event)
+
+    def _handle_submit(self, event: LogReceipt):
+        data = self.multisig_contract.submission_data(event.args.transactionId)
+        nonce, scrt_token = self.get_tx_params_from_data(data)
+        swap_id = build_hash(nonce, scrt_token)
+        EthSignatures(swap_id=swap_id,
+                      tx_id=event.args.transactionId,
+                      tx_hash=event['transactionHash'].hex(),
+                      signer="leader").save()
+
     def withdraw(self, event: AttributeDict):
         self._handle(event, True)
 
@@ -28,15 +44,24 @@ class EthConfirmer:
     def _handle(self, event: AttributeDict, success: bool):
         transaction_id = event.args.transactionId
         data = self.multisig_contract.submission_data(transaction_id)
+
+        nonce, scrt_token = self.get_tx_params_from_data(data)
+
+        self._set_tx_result(nonce, scrt_token, success=success)
+
+    def get_tx_params_from_data(self, data):
         nonce = data['nonce']
         token = data['token']
-
+        if token.lower() == swap_retry_address:
+            self.logger.info(f'Retrieving original ID for {nonce}|{token.lower()}')
+            retry = ScrtRetry.objects().get(retry_id=f'{nonce}|{token.lower()}')
+            nonce, token = retry.original_id.split('|')
+            self.logger.info(f'Got original id: {nonce} for token {token.lower()}')
         if token == '0x0000000000000000000000000000000000000000':
             scrt_token = self.coins.scrt_address('native')
         else:
             scrt_token = self.coins.scrt_address(token)
-
-        self._set_tx_result(nonce, scrt_token, success=success)
+        return nonce, scrt_token
 
     @staticmethod
     def _confirmer_id(token: str):

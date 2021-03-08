@@ -1,29 +1,39 @@
 {
-  "db_name": "bridge_testnet_v0",
-  "log_level": "info",
   "mode": "signer",
-  "pkcs11_module": "/usr/lib/softhsm/libsofthsm2.so",
-  "signatures_threshold": 3,
-  "eth_confirmations": 2,
-  "eth_start_block": 9137812,
-  "sleep_interval": 10.0,
-  "network": "ropsten",
-  "chain_id": "holodeck-2",
-  "multisig_wallet_address": "0x3375630Eff4AAcBF59195470F60aabC218e808D6",
-  "scrt_swap_address": "secret1qdazdmdq65cgrpgmkcqen2u8yg3e9h6eh9ld99",
-  "swap_code_hash": "9263D9A2026FECC5A99534E84706230AAC6590AA342434A84B7F8A43DFAAF9E3",
+  "log_level": "debug",
+  "sleep_interval": 5.0,
   "keys_base_path": "/root/keys",
-  "secretcli_home": "/root/.secretcli",
+
+  "db_name": "reuven-bridge-test-1",
+
+  "signatures_threshold": 1,
+
+  "eth_node": "http://52.148.209.123:8545/",
+  "network": "rinkeby",
+
+  "eth_confirmations": 2,
+
   "eth_address": "",
   "eth_private_key": "",
+  "pkcs11_module": "/usr/lib/softhsm/libsofthsm2.so",
+
+  "multisig_wallet_address": "0xFA22c1BF3b076D2B5785A527C38949be47Ea1082",
+  "eth_start_block": 1,
+  "secretcli_home": "/root/.secretcli",
+  "secret_node": "tcp://bootstrap.secrettestnet.io:26657",
+  "enclave_key": "io-master-cert.der",
+  "chain_id": "holodeck-2",
+  "scrt_swap_address": "secret1j8n6qxtpd8mlwkjmmk8vel8pdsq8hs996j6atr",
+  "swap_code_hash": "5c36abd74f5959dd9e8bcecb2ea308befeaff2a50b9bcbd2338c079266f9f0bf",
+
   "secret_key_file": "",
   "secret_key_name": "",
-  "secret_node": "tcp://bootstrap.secrettestnet.io:26657",
-  "eth_node": "https://ropsten.infura.io/v3/",
-  "enclave_key": "io-master-cert.der",
-  "multisig_acc_addr": "secret1v9gjeejjzrp80wysulevc9dgq2fn80ahfyrvsy",
+
+  "multisig_acc_addr": "secret13h60qegjq0x55zz00rkas9xk3c7umkd46cu4df",
   "multisig_key_name": "tnet_bridge_ms",
-  "secret_signers": "secretpub1addwnpepqfr4h7p7ylhyjuv0fcef22wu28sgdqljhnz9dtrpafhs4hdkn4r9z3w2z2n, secretpub1addwnpepq04yhuxra8kyplmx93tjjth6nt8a0879406f902sgmw7xjqcvdkzx2nmxs9, secretpub1addwnpepqgq27f8qgq6cew6clwg3cwvsg9llpqenk8xwl79wwzapjjt3ztz9ka5zfg6, secretpub1addwnpepq072jrrygc8n6vr79eq2de2qf85t58l3wd0p3cgn7wvfsg4kq7urqau20y4, secretpub1addwnpepqdtrytnaqy8m6qrwv3metetwq9xkyf3pn7acw89wehdaz66ltzfhxp6h029",
+  "secret_signers": "secretpub1addwnpepqvfhk6hynjmv85jnun5hmfm69rdpasftf0hgp73rc8uca5zdxdtucseftav, secretpub1addwnpepqdctt7t502elnma9qe64agmckvxgsz6a057fv0vjpkgjjrfs476c2nt6cxd",
+
   "eth_funds_warning_threshold": 0.1,
-  "scrt_funds_warning_threshold": 10
+  "scrt_funds_warning_threshold": 10,
+  "cosmos_funds_warning_threshold": 10
 }

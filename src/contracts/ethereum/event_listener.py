@@ -13,6 +13,9 @@ from src.util.logger import get_logger
 from src.util.web3 import w3
 
 
+FAIL_LIMIT = 12
+
+
 class EthEventListener(EventProvider):
     """Tracks the block-chain for new transactions on a given address"""
     _ids = count(0)
@@ -27,7 +30,7 @@ class EthEventListener(EventProvider):
         self.logger = get_logger(
             db_name=config.db_name,
             loglevel=config.log_level,
-            logger_name=config.logger_name or f"{self.__class__.__name__}-{self.id}"
+            logger_name=config.logger_name or f"{self.__class__.__name__}-{self.id}-{config.eth_address[0:5]}"
         )
         self.events = []
         self.pending_events: List[Tuple[str, LogReceipt]] = []
@@ -66,18 +69,26 @@ class EthEventListener(EventProvider):
         """Notify registered callbacks upon event occurrence"""
         self.logger.info("Starting..")
 
+        fail_counter = 0
+
         while not self.stop_event.is_set():
             try:
                 self.logger.debug(f'Scanning for new events of type {self.events}')
                 for name, event in self.get_new_events():
-                    print("ahola")
                     self.logger.info(f"New event found {name}, adding to confirmation handler")
                     self.pending_events.append((name, event))
                 for name, event in self.confirmation_handler():
                     self.logger.info(f"Event {name} passed confirmation limit, executing callback")
                     self.callbacks.trigger(name, event)
+
+                fail_counter = 0
             except Exception as e:  # pylint: disable=broad-except
                 self.logger.error(f'Uncaught error: {repr(e)}')
+                fail_counter += 1
+
+                if fail_counter == FAIL_LIMIT:
+                    self.logger.critical('Failed too many times. Giving up - restart me please')
+                    self.stop()
             finally:
                 sleep(self.config.sleep_interval)
 
