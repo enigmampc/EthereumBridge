@@ -159,11 +159,10 @@ class HealthChecker(Thread):
                     as_json: Dict[str, str] = result.json()
 
                     for k, v in as_json.items():
-                        if v == 'fail':
-                            if k.startswith('Secret'):
-                                to_scrt = False
-                            if k.startswith('Ether'):
-                                from_scrt = False
+                        if k.startswith('Secret') and v == 'fail':
+                            to_scrt = False
+                        if k.startswith('Ether') and v == 'fail':
+                            from_scrt = False
 
                 health_object.update(health=healthy, updated_on=datetime.now(), from_scrt=from_scrt, to_scrt=to_scrt)
 

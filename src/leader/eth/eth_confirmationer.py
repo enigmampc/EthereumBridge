@@ -31,8 +31,10 @@ class EthConfirmer:
         data = self.multisig_contract.submission_data(event.args.transactionId)
         nonce, scrt_token = self.get_tx_params_from_data(data)
         swap_id = build_hash(nonce, scrt_token)
-        EthSignatures(swap_id=swap_id, tx_id=event.args.transactionId, tx_hash=event['transactionHash'].hex(), signer="leader").save()
-
+        EthSignatures(swap_id=swap_id,
+                      tx_id=event.args.transactionId,
+                      tx_hash=event['transactionHash'].hex(),
+                      signer="leader").save()
 
     def withdraw(self, event: AttributeDict):
         self._handle(event, True)

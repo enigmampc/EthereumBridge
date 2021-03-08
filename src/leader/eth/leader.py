@@ -11,7 +11,6 @@ from src.contracts.ethereum.ethr_contract import broadcast_transaction
 from src.contracts.ethereum.event_listener import EthEventListener
 from src.contracts.ethereum.multisig_wallet import MultisigWallet
 from src.contracts.secret.secret_contract import swap_query_res, get_swap_id
-from src.db.collections.eth_signatures import EthSignatures
 from src.db.collections.eth_swap import Swap, Status
 from src.db.collections.scrt_retry import ScrtRetry
 from src.db.collections.swaptrackerobject import SwapTrackerObject
