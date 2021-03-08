@@ -26,9 +26,13 @@ class EthConfirmer:
     def submit(self, event: LogReceipt):
         self._handle_submit(event)
 
-    @staticmethod
-    def _handle_submit(event: LogReceipt):
-        EthSignatures(tx_id=event.args.transactionId, tx_hash=event['transactionHash'], signer="leader").save()
+    def _handle_submit(self, event: LogReceipt):
+        self.logger.error(f'{event}')
+        data = self.multisig_contract.submission_data(event.args.transactionId)
+        nonce, scrt_token = self.get_tx_params_from_data(data)
+        swap_id = build_hash(nonce, scrt_token)
+        EthSignatures(swap_id=swap_id, tx_id=event.args.transactionId, tx_hash=event['transactionHash'].hex(), signer="leader").save()
+
 
     def withdraw(self, event: AttributeDict):
         self._handle(event, True)
@@ -39,9 +43,14 @@ class EthConfirmer:
     def _handle(self, event: AttributeDict, success: bool):
         transaction_id = event.args.transactionId
         data = self.multisig_contract.submission_data(transaction_id)
+
+        nonce, scrt_token = self.get_tx_params_from_data(data)
+
+        self._set_tx_result(nonce, scrt_token, success=success)
+
+    def get_tx_params_from_data(self, data):
         nonce = data['nonce']
         token = data['token']
-
         if token.lower() == swap_retry_address:
             self.logger.info(f'Retrieving original ID for {nonce}|{token.lower()}')
             retry = ScrtRetry.objects().get(retry_id=f'{nonce}|{token.lower()}')
@@ -51,8 +60,7 @@ class EthConfirmer:
             scrt_token = self.coins.scrt_address('native')
         else:
             scrt_token = self.coins.scrt_address(token)
-
-        self._set_tx_result(nonce, scrt_token, success=success)
+        return nonce, scrt_token
 
     @staticmethod
     def _confirmer_id(token: str):

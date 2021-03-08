@@ -140,7 +140,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         try:
             if self._is_valid(data):
                 self.logger.info(f'Transaction {transaction_id} is valid. Signing & approving..')
-                self._approve_and_sign(transaction_id)
+                self._approve_and_sign(transaction_id, data)
 
             else:
                 self.logger.error(f'Failed to validate transaction: {data}')
@@ -204,7 +204,8 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
     def _is_confirmed(self, transaction_id: int, submission_data: Dict[str, any]) -> bool:
         """Checks with the data on the contract if signer already added confirmation or if threshold already reached"""
 
-        if EthSignatures.objects(tx_id=transaction_id).count() >= self.config.signatures_threshold:
+        if EthSignatures.objects(tx_id=transaction_id).count() >= \
+                (self.config.signatures_threshold_eth or self.config.signatures_threshold):
             self.logger.debug(f'Transaction {transaction_id} has already been signed more than threshold')
             return True
 
@@ -219,10 +220,12 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
 
         return False
 
-    def _approve_and_sign(self, submission_id: int):
+    def _approve_and_sign(self, submission_id: int, submission_data: dict):
         """
         Sign the transaction with the signer's private key and then broadcast
         Note: This operation costs gas
+
+        submission_data is after the retry address changing - so the swap_id is just the nonce|token
         """
         if self.config.network == "mainnet":
             gas_prices = BridgeOracle.gas_price()
@@ -238,7 +241,8 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         tx_hash = broadcast_transaction(tx)
 
         try:
-            EthSignatures(tx_id=submission_id, tx_hash=tx_hash, signer=self.signer.address).save()
+            swap_id = f'{submission_data["nonce"]}|{submission_data["token"]}'
+            EthSignatures(swap_id=swap_id, tx_id=submission_id, tx_hash=tx_hash.hex(), signer=self.signer.address).save()
         except Exception as e:  # pylint: disable=broad-except
             self.logger.error(f"Failed to get save signature object {submission_id=} {tx_hash}. Error: {e}")
 

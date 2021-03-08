@@ -40,6 +40,7 @@ class Config(Model):
 
     # multisig stuff
     signatures_threshold: fields.Int(normalizers=[int])
+    signatures_threshold_eth: fields.Optional(fields.Int(normalizers=[int]))
     multisig_wallet_address: fields.Str()  # Ethereum address
     multisig_acc_addr: fields.Str()  # SN address
     multisig_key_name: fields.Str()

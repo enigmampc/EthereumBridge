@@ -5,6 +5,8 @@ from shutil import copyfile
 from subprocess import PIPE, run as subprocess_run
 from typing import List, Dict
 
+from retry import retry
+
 from src.contracts.secret.secret_contract import swap_json
 from src.util.config import Config, config
 from src.util.logger import get_logger
@@ -105,6 +107,7 @@ def get_uscrt_balance(address: str) -> int:
     return amount
 
 
+@retry(Exception, tries=3, delay=1, backoff=2)
 def run_secret_cli(cmd: List[str], log: bool = True) -> str:
     """
 

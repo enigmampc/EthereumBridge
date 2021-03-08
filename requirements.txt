@@ -13,3 +13,4 @@ ecdsa
 # rusty-rlp
 serde
 tornado
+retry
