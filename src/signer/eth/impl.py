@@ -4,6 +4,7 @@ from random import randrange
 from time import sleep
 from typing import Dict
 
+from mongoengine import DoesNotExist, MultipleObjectsReturned
 from web3.datastructures import AttributeDict
 
 import src.contracts.ethereum.message as message
@@ -156,6 +157,11 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         obj = SwapTrackerObject.objects().get(src=signer_id(self.account))
         obj.update(nonce=submission_event["blockNumber"])
 
+    def _eth_to_scrt(self, token: str) -> str:
+        if token == '0x0000000000000000000000000000000000000000':
+            return self.coins.scrt_address('native')
+        return self.coins.scrt_address(token)
+
     def _is_valid(self, submission_data: Dict[str, any]) -> bool:
         # lookup the tx hash in secret20, and validate it.
         self.logger.info(f"Testing validity of {submission_data}")
@@ -163,10 +169,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         token = submission_data['token']
 
         try:
-            if token == '0x0000000000000000000000000000000000000000':
-                swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address('native'))
-            else:
-                swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self.coins.scrt_address(token))
+            swap = query_scrt_swap(nonce, self.config.scrt_swap_address, self._eth_to_scrt(token))
         except subprocess.CalledProcessError as e:
             self.logger.error(f'Error querying transaction: {e}')
             raise RuntimeError from None
@@ -205,8 +208,9 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         """Checks with the data on the contract if signer already added confirmation or if threshold already reached"""
 
         if EthSignatures.objects(tx_id=transaction_id).count() >= \
-                (self.config.signatures_threshold_eth or self.config.signatures_threshold):
+                (self.config.signatures_threshold_eth or self.config.signatures_threshold + 1):
             self.logger.debug(f'Transaction {transaction_id} has already been signed more than threshold')
+            # todo: add a timer here
             return True
 
         # check if already executed
@@ -219,6 +223,9 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
             return True
 
         return False
+
+    def _save_lock_object(self, transaction_id: int):
+        EthSignatures(swap_id='', tx_id=transaction_id, tx_hash='', signer=self.signer.address).save()
 
     def _approve_and_sign(self, submission_id: int, submission_data: dict):
         """
@@ -241,11 +248,21 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
         tx_hash = broadcast_transaction(tx)
 
         try:
-            swap_id = f'{submission_data["nonce"]}|{submission_data["token"]}'
-            EthSignatures(swap_id=swap_id, tx_id=submission_id, tx_hash=tx_hash.hex(), signer=self.signer.address).save()
+            scrt_addr = self._eth_to_scrt(submission_data["token"])
+            swap_id = f'{submission_data["nonce"]}|{scrt_addr}'
+            self._save_sig_to_db(swap_id, submission_id, tx_hash.hex())
         except Exception as e:  # pylint: disable=broad-except
             self.logger.error(f"Failed to get save signature object {submission_id=} {tx_hash}. Error: {e}")
 
         # tx_hash = self.multisig_contract.confirm_transaction(self.account, self.private_key, gas_prices, msg)
         self.logger.info(msg=f"Signed transaction - signer: {self.account}, signed msg: {msg}, "
                              f"tx hash: {tx_hash.hex()}")
+
+    def _save_sig_to_db(self, swap_id, submission_id, tx_hash):
+        try:
+            old_sig = EthSignatures.objects().get(swap_id=swap_id, signer=self.signer.address)
+            old_sig.update(swap_id=swap_id, tx_hash=tx_hash)
+        except DoesNotExist:
+            EthSignatures(swap_id=swap_id, tx_id=submission_id, tx_hash=tx_hash, signer=self.signer.address).save()
+        except MultipleObjectsReturned:
+            self.logger.error(f'Too many signatures for transaction in DB: {swap_id=}, {submission_id=}, {tx_hash=}')
