@@ -39,6 +39,15 @@ class CoinGecko(PriceSourceBase):
         "RENBTC": "renbtc",
         "USDC": "usd-coin",
         "SUSHI": "sushi",
+        "RUNE": "thorchain-erc20",
+        "TORN": "tornado-cash",
+        "BAT": "basic-attention-token",
+        "ZRX": "0x",
+        "ENJ": "enjincoin",
+        "MANA": "decentraland",
+        "YFL": "yflink",
+        "ALPHA": "alpha-platform",
+        "MATIC": "matic-network",
     }
 
     currency_map = {Currency.USD: "usd"}

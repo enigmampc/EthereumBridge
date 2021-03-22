@@ -88,7 +88,7 @@ class CommandHandler(tornado.web.RequestHandler):
         pass
 
     def get(self):
-        if len(self.threads) < 4:
+        if len(self.threads) < 3:
             raise tornado.web.HTTPError(status_code=400)
 
         key = self.get_argument('key')
@@ -101,11 +101,11 @@ class CommandHandler(tornado.web.RequestHandler):
         code_hash = self.get_argument('code_hash')
         unsigned = add_token(token, code_hash, min_amount)
 
-        swap_contract = self.threads[3].config.scrt_swap_address
-        swap_code_hash = self.threads[3].config.swap_code_hash
-        multisig = self.threads[3].config.multisig_acc_addr
-        chain_id = self.threads[3].config.chain_id
-        enclave_key = self.threads[3].config.enclave_key
+        swap_contract = self.threads[2].config.scrt_swap_address
+        swap_code_hash = self.threads[2].config.swap_code_hash
+        multisig = self.threads[2].config.multisig_acc_addr
+        chain_id = self.threads[2].config.chain_id
+        enclave_key = self.threads[2].config.enclave_key
 
         tx = create_unsigned_tx(secret_contract_addr=swap_contract,
                                 code_hash=swap_code_hash,
@@ -115,11 +115,11 @@ class CommandHandler(tornado.web.RequestHandler):
                                 transaction_data=unsigned)
 
         Commands(unsigned_tx=tx,
-                 sequence=self.threads[3].manager.sequence,
+                 sequence=self.threads[2].manager.sequence,
                  dst_address=token,
                  status=Status.SWAP_UNSIGNED).save()
 
-        self.threads[3].manager.sequence += 1
+        self.threads[2].manager.sequence += 1
 
 
 # class TestHandler(tornado.web.RequestHandler):
