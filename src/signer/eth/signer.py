@@ -53,7 +53,10 @@ class EtherSigner(Thread):
     def run(self):
         self.logger.info("Starting..")
 
-        from_block = self.choose_starting_block()
+        if self.config.eth_start_block:
+            from_block = self.choose_starting_block()
+        else:
+            from_block = 'latest'
 
         self.logger.info(f'Catching up from block: {from_block}')
 

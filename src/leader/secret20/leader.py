@@ -27,7 +27,7 @@ def _set_retry(tx: Swap):
 
 class Secret20Leader(Thread):
     """ Broadcasts signed Secret-20 minting tx after successful ETH or ERC20 swap event """
-    network = "Secret"
+    # network = "Secret"
 
     def __init__(
         self,
@@ -37,9 +37,9 @@ class Secret20Leader(Thread):
         *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-
         self.multisig_name = secret_multisig.name
         self.config = config
+        self.network = config.network
         self.manager = SecretManager(contract, secret_multisig, config)
         self.logger = get_logger(
             db_name=config.db_name,
@@ -75,7 +75,7 @@ class Secret20Leader(Thread):
             for tx in Commands.objects(status=Status.SWAP_SIGNED):
                 self._create_and_broadcast(tx)
 
-            for tx in Swap.objects(status=Status.SWAP_SIGNED, src_network="Ethereum"):
+            for tx in Swap.objects(status=Status.SWAP_SIGNED, src_network=self.network):
                 # if there are 2 transactions that depend on each other (sequence number), and the first fails we mark
                 # the next as "retry"
                 if failed_prev:
@@ -86,7 +86,7 @@ class Secret20Leader(Thread):
                 self.logger.info(f"Found tx ready for broadcasting {tx.id}")
                 failed_prev = not self._create_and_broadcast(tx)
             failed_prev = False
-            for tx in Swap.objects(status=Status.SWAP_SUBMITTED, src_network="Ethereum"):
+            for tx in Swap.objects(status=Status.SWAP_SUBMITTED, src_network=self.network):
                 if failed_prev:
                     self.logger.info(f"Previous TX failed, retrying {tx.id}")
                     _set_retry(tx)
@@ -147,7 +147,7 @@ class Secret20Leader(Thread):
 
         **kwargs needs to be here even if unused, because this function gets passed arguments from mongo internals
         """
-        if not document.status == Status.SWAP_SUBMITTED or not document.src_network == "Ethereum":
+        if not document.status == Status.SWAP_SUBMITTED or not document.src_network == self.network:
             return False
 
         tx_hash = document.dst_tx_hash

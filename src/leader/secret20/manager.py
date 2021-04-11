@@ -46,6 +46,7 @@ class SecretManager(Thread):
         self.sequence_lock = Lock()
         self.sequence = 0
         self.update_sequence()
+        self.network = config.network
         self.event_listener.register(self._handle, contract.tracked_event(),)
         super().__init__(group=None, name="SecretManager", target=self.run, **kwargs)
 
@@ -72,13 +73,14 @@ class SecretManager(Thread):
 
         to_block = w3.eth.blockNumber - self.config.eth_confirmations
 
-        self.catch_up(to_block)
+        if self.config.eth_start_block:
+            self.catch_up(to_block)
 
         self.event_listener.start()
         self.logger.info("Done catching up")
 
         while not self.stop_signal.is_set():
-            for transaction in Swap.objects(status=Status.SWAP_RETRY, src_network="Ethereum"):
+            for transaction in Swap.objects(status=Status.SWAP_RETRY, src_network=self.network):
                 self._retry(transaction)
 
             for transaction in Swap.objects(status=Status.SWAP_UNSIGNED):
@@ -100,7 +102,7 @@ class SecretManager(Thread):
             self.logger.debug(f"Tx {transaction.id} does not have enough signatures")
 
     def catch_up(self, to_block: int):
-        from_block = SwapTrackerObject.last_processed('Ethereum') + 1
+        from_block = SwapTrackerObject.last_processed(self.network) + 1
         self.logger.debug(f'Starting to catch up from block {from_block}')
         if self.config.eth_start_block > from_block:
             self.logger.debug(f'Due to config fast forwarding to block {self.config.eth_start_block}')
@@ -167,7 +169,7 @@ class SecretManager(Thread):
             )
 
             tx = Swap(src_tx_hash=tx_hash, status=Status.SWAP_UNSIGNED, unsigned_tx=unsigned_tx, src_coin=token,
-                      dst_coin=s20.name, dst_address=s20.address, src_network="Ethereum", sequence=self.sequence,
+                      dst_coin=s20.name, dst_address=s20.address, src_network=self.network, sequence=self.sequence,
                       amount=amount)
             tx.save(force_insert=True)
             self.sequence = self.sequence + 1

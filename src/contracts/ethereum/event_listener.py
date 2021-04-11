@@ -86,9 +86,9 @@ class EthEventListener(EventProvider):
                 self.logger.error(f'Uncaught error: {repr(e)}')
                 fail_counter += 1
 
-                if fail_counter == FAIL_LIMIT:
-                    self.logger.critical('Failed too many times. Giving up - restart me please')
-                    self.stop()
+                # if fail_counter == FAIL_LIMIT:
+                #     self.logger.critical('Failed too many times. Giving up - restart me please')
+                #     self.stop()
             finally:
                 sleep(self.config.sleep_interval)
 

@@ -52,7 +52,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
 
     Todo: Naming sucks. This is mostly caused by bad design, and by me not having enough coffee
     """
-    network = "Ethereum"
+    # network = "Ethereum"
 
     def __init__(
         self,
@@ -70,7 +70,7 @@ class EthSignerImpl:  # pylint: disable=too-many-instance-attributes, too-many-a
             loglevel=self.config.log_level,
             logger_name=config.logger_name or f"{self.__class__.__name__}-{self.account[0:5]}"
         )
-
+        self.network = config.network
         self.erc20 = erc20_contract()
         self.catch_up_complete = False
 

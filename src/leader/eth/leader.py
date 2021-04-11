@@ -40,7 +40,7 @@ class EtherLeader(Thread):
 
     The account set here must have enough ETH for all the transactions you're planning on doing
     """
-    network = "Ethereum"
+    # network = "Ethereum"
 
     def __init__(
         self,
@@ -54,7 +54,7 @@ class EtherLeader(Thread):
         self.erc20 = erc20_contract()
         self.pending_txs: List[str] = []
         self.token_map = {}
-
+        self.network = config.network
         self.signer = signer
         self._coins = CoinHandler()
         self.logger = get_logger(
@@ -90,7 +90,10 @@ class EtherLeader(Thread):
         self.logger.info("Starting")
 
         # todo: fix so tracker doesn't start from 0
-        from_block = SwapTrackerObject.get_or_create(src="Ethereum").nonce
+        if self.config.eth_start_block:
+            from_block = SwapTrackerObject.get_or_create(src=self.network).nonce
+        else:
+            from_block = 'latest'
 
         self.event_listener.register(self.confirmer.submit, ['Submission'], from_block=from_block)
         self.event_listener.register(self.confirmer.withdraw, ['Withdraw'], from_block=from_block)
