@@ -100,8 +100,8 @@ class Secret20Signer(Thread):
 
         if not self._is_valid(tx):
             self.logger.error(f"Validation failed. Signer: {self.multisig.name}. Tx id:{tx.id}.")
-            tx.status = Status.SWAP_FAILED
-            tx.save()
+            # tx.status = Status.SWAP_FAILED
+            # tx.save()
             raise ValueError
 
         self.sign(tx)
@@ -110,8 +110,8 @@ class Secret20Signer(Thread):
         try:
             signed_tx = self._sign_with_secret_cli(tx.unsigned_tx, tx.sequence)
         except RuntimeError as e:
-            tx.status = Status.SWAP_FAILED
-            tx.save()
+            # tx.status = Status.SWAP_FAILED
+            # tx.save()
             raise ValueError from e
         try:
             Signatures(tx_id=tx.id, signer=self.multisig.name, signed_tx=signed_tx).save()
@@ -126,8 +126,8 @@ class Secret20Signer(Thread):
     def _sign_add_token(self, sender, document: Commands, **kwargs):  # pylint: disable=unused-argument
         decrypted_data = self.decrypt_tx(document)
 
-        if not decrypted_data['add_token']:
-            raise ValueError('Tried to get a signature for a different command than add_token!')
+        if 'add_token' not in decrypted_data and 'remove_minter' not in decrypted_data:
+            raise ValueError('Tried to get a signature for a different command than add_token or remove minter!')
         self._validate_and_sign_command(document)
 
     def _is_valid(self, tx: Swap) -> bool:
