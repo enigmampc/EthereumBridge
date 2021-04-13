@@ -3,15 +3,16 @@ from enum import Enum
 import enum
 
 
-NATIVE_COIN_ADDRESS = 'native'
+NATIVE_COIN_ADDRESS = "native"
 
 
 # Supported networks are networks that have full support.
 # Coins deployed on the networks will be named by a string.
 # The native coin must be named appropriately, by its main denomination ('ETH', 'BTC', etc.)
 class Network(Enum):
-    Ethereum = 'Ethereum'
-    CosmosHub = 'CosmosHub'
+    Ethereum = "Ethereum"
+    CosmosHub = "CosmosHub"
+    Terra = "Terra"
 
 
 class SwapDirection(Enum):
@@ -32,4 +33,4 @@ class SwapEvent:
     amount: int  # in smallest denomination (e.g. wei)
     sender: str  # address in source network
     recipient: str  # address in destination network
-    data: str = ''
+    data: str = ""

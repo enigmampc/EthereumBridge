@@ -5,7 +5,7 @@ from serde import Model, fields
 
 from .logger import get_logger
 
-logger = get_logger('config')
+logger = get_logger("config")
 
 global_config_paths = {
     "LOCAL": "local_config.json",
@@ -15,14 +15,14 @@ global_config_paths = {
 }
 
 env_defaults = {
-    'LOCAL': './config/local_config.json',
-    'TEST': './config/test_config.json',
-    'TESTNET': './config/testnet_config.json',
-    'MAINNET': './config/mainnet_config.json',
+    "LOCAL": "./config/local_config.json",
+    "TEST": "./config/test_config.json",
+    "TESTNET": "./config/testnet_config.json",
+    "MAINNET": "./config/mainnet_config.json",
 }
 
 
-__all__ = ['Config', 'config', 'get_config']
+__all__ = ["Config", "config", "get_config"]
 
 
 # The normalizers are pointed out explicitly here for robustness in case the field
@@ -77,6 +77,20 @@ class Config(Model):
     cosmos_multisig_key_name: fields.Str()
     cosmos_signers: fields.Str()
 
+    # terra stuff
+    terra_node: fields.Str()
+    terra_chain_id: fields.Str()
+    terra_multisig_addr: fields.Str
+
+    # terra signer stuff
+    terra_key_file: fields.Str()
+    terra_key_name: fields.Str()
+    terra_key_password: fields.Optional(fields.Str)
+
+    # terra multisig stuff
+    terra_multisig_key_name: fields.Str()
+    terra_signers: fields.Str()
+
     # oracle stuff
     ethgastation_api_key: fields.Optional(fields.Str)
 
@@ -102,13 +116,14 @@ class Config(Model):
     eth_funds_warning_threshold: fields.Float(normalizers=[float])
     scrt_funds_warning_threshold: fields.Float(normalizers=[float])
     cosmos_funds_warning_threshold: fields.Float(normalizers=[float])
+    terra_funds_warning_threshold: fields.Float(normalizers=[float])
 
 
 def get_config(config_file: str = None) -> Config:
     if not config_file:
-        config_file = env_defaults[os.getenv('SWAP_ENV', 'LOCAL')]
+        config_file = env_defaults[os.getenv("SWAP_ENV", "LOCAL")]
 
-    logger.info(f'Loading custom configuration: {config_file}')
+    logger.info(f"Loading custom configuration: {config_file}")
     try:
         with open(config_file) as f:
             conf_file_data = json.load(f)
@@ -120,7 +135,10 @@ def get_config(config_file: str = None) -> Config:
         raise ValueError from e
 
     config_data = {}
-    for field_name, field_type in Config.__fields__.items():  # pylint: disable=no-member
+    for (
+        field_name,
+        field_type,
+    ) in Config.__fields__.items():  # pylint: disable=no-member
         for source in [os.environ, conf_file_data]:
             if field_name in source:
                 config_data[field_name] = source[field_name]
@@ -132,7 +150,9 @@ def get_config(config_file: str = None) -> Config:
                 break
         else:  # This will run if the field has not been found in the `for` loop (if `break` has not been executed)
             if not isinstance(field_type, fields.Optional):
-                raise EnvironmentError(f'Missing key {field_name!r} in configuration file or environment variables')
+                raise EnvironmentError(
+                    f"Missing key {field_name!r} in configuration file or environment variables"
+                )
 
     return Config.from_dict(config_data)
 
