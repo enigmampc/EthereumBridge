@@ -50,8 +50,8 @@ class Oracle:
         if not filtered:
             raise ValueError("Failed to get gas prices")
 
-        average = sum(filtered) / len(filtered)
-        return int(average)
+        max_gas_price = max(filtered)
+        return int(max_gas_price)
 
     def price(self, coin: str, currency: Currency) -> float:
         # aiohttp displays an error on windows, but we can ignore it, or switch to
