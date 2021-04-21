@@ -489,7 +489,7 @@ dependencies = [
 [[package]]
 name = "secret-toolkit"
 version = "0.1.0"
-source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#53315d4179cfde846b0002d28d8befbe10ce3682"
+source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#50d7d25a7d75b302643ca15121e1afd1a0ef1bd1"
 dependencies = [
  "secret-toolkit-crypto",
  "secret-toolkit-serialization",
@@ -500,7 +500,7 @@ dependencies = [
 [[package]]
 name = "secret-toolkit-crypto"
 version = "0.1.0"
-source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#53315d4179cfde846b0002d28d8befbe10ce3682"
+source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#50d7d25a7d75b302643ca15121e1afd1a0ef1bd1"
 dependencies = [
  "cosmwasm-std 0.10.0",
  "libsecp256k1",
@@ -512,7 +512,7 @@ dependencies = [
 [[package]]
 name = "secret-toolkit-serialization"
 version = "0.1.0"
-source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#53315d4179cfde846b0002d28d8befbe10ce3682"
+source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#50d7d25a7d75b302643ca15121e1afd1a0ef1bd1"
 dependencies = [
  "bincode2",
  "cosmwasm-std 0.10.1",
@@ -522,7 +522,7 @@ dependencies = [
 [[package]]
 name = "secret-toolkit-storage"
 version = "0.1.0"
-source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#53315d4179cfde846b0002d28d8befbe10ce3682"
+source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#50d7d25a7d75b302643ca15121e1afd1a0ef1bd1"
 dependencies = [
  "cosmwasm-std 0.10.1",
  "cosmwasm-storage",
@@ -533,7 +533,7 @@ dependencies = [
 [[package]]
 name = "secret-toolkit-utils"
 version = "0.1.0"
-source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#53315d4179cfde846b0002d28d8befbe10ce3682"
+source = "git+https://github.com/enigmampc/secret-toolkit?branch=vanilla-cosmwasm-0.10.1#50d7d25a7d75b302643ca15121e1afd1a0ef1bd1"
 dependencies = [
  "cosmwasm-std 0.10.1",
  "schemars",

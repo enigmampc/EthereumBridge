@@ -9,7 +9,6 @@ use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
 use cosmwasm_storage::{PrefixedStorage, ReadonlyPrefixedStorage};
 
 use secret_toolkit::storage::{AppendStore, AppendStoreMut};
-use serde::de::DeserializeOwned;
 use std::any::type_name;
 
 pub static CONFIG_KEY: &[u8] = b"config";
@@ -24,16 +23,6 @@ fn set_bin_data<T: Serialize, S: Storage>(storage: &mut S, key: &[u8], data: &T)
 
     storage.set(key, &bin_data);
     Ok(())
-}
-
-fn get_bin_data<T: DeserializeOwned, S: ReadonlyStorage>(storage: &S, key: &[u8]) -> StdResult<T> {
-    let bin_data = storage.get(key);
-
-    match bin_data {
-        None => Err(StdError::not_found("Key not found in storage")),
-        Some(bin_data) => Ok(bincode2::deserialize::<T>(&bin_data)
-            .map_err(|e| StdError::serialize_err(type_name::<T>(), e))?),
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
@@ -58,7 +47,7 @@ impl Mint {
 
         //let mut store = AppendStoreMut::attach_or_create(&mut store)?;
         //store.set(&self.identifier.into_bytes(), set_bin_data);
-        set_bin_data(&mut store, self.identifier.as_bytes(), self);
+        set_bin_data(&mut store, self.identifier.as_bytes(), self)?;
         // if exists.is_ok() && exists.unwrap() {
         //     return Err(StdError::generic_err("Mint already exists"));
         // }

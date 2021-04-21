@@ -10,7 +10,7 @@ use cosmwasm_std::{
 
 pub fn _add_token<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
-    env: &Env,
+    _env: &Env,
     token_address: &HumanAddr,
     minimum_amount: Uint128,
 ) -> StdResult<TokenMsgs> {
@@ -37,7 +37,7 @@ pub fn _rm_token<S: Storage, A: Api, Q: Querier>(
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
-    env: Env,
+    _env: Env,
     msg: InitMsg,
 ) -> StdResult<InitResponse> {
     let state = State {
@@ -84,7 +84,7 @@ fn unlock_token<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     _env: Env,
     address: HumanAddr,
-    identifier: String,
+    _identifier: String,
     amount: Uint128,
     token: HumanAddr,
 ) -> StdResult<HandleResponse> {
@@ -212,7 +212,6 @@ fn lock_token<S: Storage, A: Api, Q: Querier>(
     let nonce = swap_store.store(&mut deps.storage)?;
 
     // send secret-20 burn message to token contract
-    let contract_addr = deps.api.human_address(&params.address)?;
     Ok(HandleResponse {
         messages: vec![],
         log: vec![log("tx_id", nonce)],
